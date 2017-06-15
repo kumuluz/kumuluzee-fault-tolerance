@@ -14,11 +14,30 @@
 
     <artifactId>kumuluzee-circuit-breaker-hystrix</artifactId>
 
+    <properties>
+        <hystrix.version>1.5.12</hystrix.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.kumuluz.ee</groupId>
             <artifactId>kumuluzee-core</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.kumuluz.ee</groupId>
+            <artifactId>kumuluzee-cdi-weld</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.kumuluz.ee.circuit.breaker</groupId>
+            <artifactId>kumuluzee-circuit-breaker-common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.netflix.hystrix</groupId>
+            <artifactId>hystrix-core</artifactId>
+            <version>${hystrix.version}</version>
         </dependency>
     </dependencies>
 
