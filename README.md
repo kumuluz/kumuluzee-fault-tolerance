@@ -1,5 +1,5 @@
 # KumuluzEE Circuit Breaker
-[![Build Status](https://img.shields.io/travis/kumuluz/kumuluzee-discovery/master.svg?style=flat)](https://travis-ci.org/kumuluz/kumuluzee-discovery)
+[![Build Status](https://img.shields.io/travis/kumuluz/kumuluzee-circuit-breaker/master.svg?style=flat)](https://travis-ci.org/kumuluz/kumuluzee-discovery)
 
 > KumuluzEE Circuit Breaker extension for the Kumuluz EE microservice framework. 
 
@@ -65,6 +65,12 @@ public class CustomersBean {
 
 }
 ```
+
+**NOTE**: Try to avoid usage of `@RequestScoped` CDI injection into CDI annotated with `@EnableCircuitBreaker`. Default behaviour of KumuluzEE Circuit Breaker on Hystrix platform
+is to execute circuit breaker in isolated thread. This causes the context of injected CDI to be inactive (it's injected dependencies are not initiated). This can be avoid by 
+using [semaphore isolated execution](https://github.com/Netflix/Hystrix/wiki/How-it-Works#Isolation). No such issues were detected using the `@ApplicationScoped` 
+CDI.
+
  
 ### KumuluzEE Configuration
 
