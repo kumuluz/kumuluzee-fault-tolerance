@@ -1,5 +1,5 @@
 # KumuluzEE Circuit Breaker
-[![Build Status](https://img.shields.io/travis/kumuluz/kumuluzee-circuit-breaker/master.svg?style=flat)](https://travis-ci.org/kumuluz/kumuluzee-discovery)
+[![Build Status](https://img.shields.io/travis/kumuluz/kumuluzee-circuit-breaker/master.svg?style=flat)](https://travis-ci.org/kumuluz/kumuluzee-circuit-breaker)
 
 > KumuluzEE Circuit Breaker extension for the Kumuluz EE microservice framework. 
 
