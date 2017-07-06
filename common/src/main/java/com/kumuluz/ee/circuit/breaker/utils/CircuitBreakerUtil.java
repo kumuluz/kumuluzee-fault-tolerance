@@ -27,6 +27,7 @@ import com.kumuluz.ee.circuit.breaker.models.ConfigurationProperty;
 import com.kumuluz.ee.circuit.breaker.models.ExecutionMetadata;
 import com.kumuluz.ee.configuration.ConfigurationListener;
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
+import org.jboss.weld.context.RequestContext;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -95,13 +96,13 @@ public class CircuitBreakerUtil {
         configListenersMap.values().forEach(configUtil::unsubscribe);
     }
 
-    public Object execute(InvocationContext ic) throws Exception {
+    public Object execute(InvocationContext invocationContext, RequestContext requestContext) throws Exception {
 
-        ExecutionMetadata config = toExecutionMetadata(ic);
+        ExecutionMetadata config = toExecutionMetadata(invocationContext);
 
         updateConfigurations();
 
-        return circuitBreakerExecutor.execute(ic, config);
+        return circuitBreakerExecutor.execute(invocationContext, requestContext, config);
     }
 
     public void watch(ConfigurationProperty property) {

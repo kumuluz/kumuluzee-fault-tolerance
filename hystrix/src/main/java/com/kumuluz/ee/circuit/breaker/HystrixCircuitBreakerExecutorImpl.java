@@ -31,6 +31,7 @@ import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.*;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
+import org.jboss.weld.context.RequestContext;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -117,11 +118,11 @@ public class HystrixCircuitBreakerExecutorImpl implements CircuitBreakerExecutor
     }
 
     @Override
-    public Object execute(InvocationContext ic, ExecutionMetadata metadata) throws Exception {
+    public Object execute(InvocationContext invocationContext, RequestContext requestContext, ExecutionMetadata metadata) throws Exception {
 
         HystrixCommand.Setter hystrixCommand = getHystrixCommandSetter(metadata);
 
-        HystrixGenericCommand cmd = new HystrixGenericCommand(hystrixCommand, ic, metadata);
+        HystrixGenericCommand cmd = new HystrixGenericCommand(hystrixCommand, invocationContext, requestContext, metadata);
 
         try {
             return cmd.execute();

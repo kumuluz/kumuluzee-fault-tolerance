@@ -21,8 +21,11 @@
 package com.kumuluz.ee.circuit.breaker.commands;
 
 import com.kumuluz.ee.circuit.breaker.models.ExecutionMetadata;
+import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.HystrixCommand;
+import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
+import org.jboss.weld.context.RequestContext;
 
 import javax.interceptor.InvocationContext;
 import java.lang.reflect.InvocationTargetException;
@@ -37,26 +40,38 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
 
     private static final Logger log = Logger.getLogger(HystrixGenericCommand.class.getName());
 
+    private final InvocationContext invocationContext;
+    private final RequestContext requestContext;
     private final ExecutionMetadata metadata;
-    private final InvocationContext ic;
 
-    public HystrixGenericCommand(HystrixCommand.Setter setter, InvocationContext ic, ExecutionMetadata metadata) {
+    public HystrixGenericCommand(HystrixCommand.Setter setter, InvocationContext invocationContext, RequestContext requestContext, ExecutionMetadata metadata) {
 
         super(setter);
 
-        this.ic = ic;
+        this.invocationContext = invocationContext;
+        this.requestContext = requestContext;
         this.metadata = metadata;
     }
 
     @Override
     protected Object run() throws Exception {
 
-        log.finest("Run method called for " + ic);
+        log.finest("Executin command '" + metadata.getCommandKey() + "'.");
 
+        Object property = ConfigurationManager.getConfigInstance()
+                .getProperty("hystrix.command." + metadata.getCommandKey() + ".execution.isolation.strategy");
         Object result;
 
+        boolean threadExecution = property == null || property == HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
+
         try {
-            result = ic.proceed();
+            if (threadExecution && !requestContext.isActive())
+                requestContext.activate();
+
+            result = invocationContext.proceed();
+
+            if (threadExecution && requestContext.isActive())
+                requestContext.deactivate();
         } catch (Throwable e) {
             if (isFallbackInvokeable(e))
                 throw e;
@@ -70,22 +85,22 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
     @Override
     protected Object getFallback() {
 
-        log.finest("Calling fallback method " + metadata.getFallbackMethod());
+        log.finest("Executing fallback for command '" + metadata.getCommandKey() + "'.");
 
         Exception executionException = getExceptionFromThrowable(getExecutionException());
 
-        if (executionException != null)
-            log.finest("Callback fired by " + executionException.getClass().getName());
+        if (executionException != null) {
+            log.finest("Callback for command '" + metadata.getCommandKey() + "' fired by " +
+                    executionException.getClass().getName());
+        }
 
         try {
             return metadata.getFallbackMethod()
-                    .invoke(ic.getTarget(),
-                            ic.getParameters());
-        } catch (IllegalAccessException e) {
-            log.severe("Exception occured while trying to invoke fallback method: " + e.getClass().getName());
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            log.severe("Exception occured while trying to invoke fallback method: " + e.getClass().getName());
+                    .invoke(invocationContext.getTarget(),
+                            invocationContext.getParameters());
+        } catch (IllegalAccessException|InvocationTargetException e) {
+            log.severe("Exception occured while trying to invoke fallback method for key '" +
+                    metadata.getCommandKey() + "': " + e.getClass().getName());
             e.printStackTrace();
         }
 

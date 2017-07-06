@@ -23,6 +23,8 @@ package com.kumuluz.ee.circuit.breaker.interceptors;
 import com.kumuluz.ee.circuit.breaker.annotations.CircuitBreaker;
 import com.kumuluz.ee.circuit.breaker.annotations.EnableCircuitBreaker;
 import com.kumuluz.ee.circuit.breaker.utils.CircuitBreakerUtil;
+import org.jboss.weld.context.RequestContext;
+import org.jboss.weld.context.unbound.Unbound;
 
 import javax.annotation.Priority;
 import javax.inject.Inject;
@@ -44,17 +46,19 @@ public class EnableCircuitBreakerInterceptor {
     @Inject
     private CircuitBreakerUtil circuitBreakerUtil;
 
-    @AroundInvoke
-    public Object executeWithCircuitBreaker(InvocationContext ic) throws Exception {
+    @Inject
+    @Unbound
+    private RequestContext requestContext;
 
-        Method targetMethod = ic.getMethod();
+    @AroundInvoke
+    public Object executeWithCircuitBreaker(InvocationContext invocationContext) throws Exception {
+
+        Method targetMethod = invocationContext.getMethod();
 
         if (targetMethod.isAnnotationPresent(CircuitBreaker.class)) {
-            ic.getContextData();
-
-            return circuitBreakerUtil.execute(ic);
+            return circuitBreakerUtil.execute(invocationContext, requestContext);
         } else {
-            return ic.proceed();
+            return invocationContext.proceed();
         }
     }
 

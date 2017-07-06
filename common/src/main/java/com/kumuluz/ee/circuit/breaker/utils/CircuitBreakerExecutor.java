@@ -22,6 +22,7 @@ package com.kumuluz.ee.circuit.breaker.utils;
 
 import com.kumuluz.ee.circuit.breaker.models.ConfigurationProperty;
 import com.kumuluz.ee.circuit.breaker.models.ExecutionMetadata;
+import org.jboss.weld.context.RequestContext;
 
 import javax.interceptor.InvocationContext;
 
@@ -35,7 +36,7 @@ public interface CircuitBreakerExecutor {
 
     String getName();
 
-    Object execute(InvocationContext ic, ExecutionMetadata coreConfig) throws Exception;
+    Object execute(InvocationContext invocationContext, RequestContext requestContext, ExecutionMetadata coreConfig) throws Exception;
 
     void setPropertyValue(ConfigurationProperty property);
 
