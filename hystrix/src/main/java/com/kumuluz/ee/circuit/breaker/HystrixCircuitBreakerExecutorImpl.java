@@ -31,6 +31,7 @@ import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.*;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
+import com.netflix.hystrix.exception.HystrixRuntimeException;
 import org.jboss.weld.context.RequestContext;
 
 import javax.enterprise.context.RequestScoped;
@@ -127,6 +128,9 @@ public class HystrixCircuitBreakerExecutorImpl implements CircuitBreakerExecutor
         try {
             return cmd.execute();
         } catch (HystrixBadRequestException e) {
+            throw (Exception) e.getCause();
+        } catch (HystrixRuntimeException e) {
+            log.warning("Hystrix runtime exception was thrown because of " + e.getCause().getClass().getName());
             throw (Exception) e.getCause();
         }
     }
