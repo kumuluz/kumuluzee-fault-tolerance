@@ -160,6 +160,16 @@ public class CircuitBreakerUtil {
         ConfigurationUtil.getInstance().subscribe(property.configurationPath(), listener);
     }
 
+    public void removeWatch(ConfigurationProperty property) {
+
+        String configPath = property.configurationPath();
+
+        if (configListenersMap.containsKey(configPath)) {
+            ConfigurationUtil.getInstance().unsubscribe(configListenersMap.get(configPath));
+            configListenersMap.remove(configPath);
+        }
+    }
+
     public void updateConfigurations() {
 
         int cnt = 0;

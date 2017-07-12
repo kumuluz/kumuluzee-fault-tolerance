@@ -199,6 +199,17 @@ public class HystrixCircuitBreakerExecutorImpl implements CircuitBreakerExecutor
         HystrixCommandKey commandKey = HystrixCommandKey.Factory.asKey(key);
         initializeCommandProperties(key);
 
+        // check if fallback is not defined and disable its execution
+        if (metadata.getFallbackMethod() == null) {
+            ConfigurationProperty configProperty = new ConfigurationProperty(getName(), CircuitBreakerConfigurationType.COMMAND,
+                    key, "fallback-enabled");
+            String hystrixConfigProperty = toHystrixPropertyKey(configProperty.getType(), configProperty.getTypeKey(),
+                    commandPropertiesMap.get(configProperty.getProperty()));
+
+            setHystrixProperty(hystrixConfigProperty, false);
+            circuitBreakerUtil.removeWatch(configProperty);
+        }
+
         hystrixCommandKeys.put(key, commandKey);
 
         return commandKey;
