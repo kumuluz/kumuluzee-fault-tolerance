@@ -18,13 +18,13 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.circuit.breaker.utils;
+package com.kumuluz.ee.fault.tolerance.utils;
 
-import com.kumuluz.ee.circuit.breaker.annotations.CircuitBreaker;
-import com.kumuluz.ee.circuit.breaker.annotations.CircuitBreakerGroup;
-import com.kumuluz.ee.circuit.breaker.models.CircuitBreakerConfigurationType;
-import com.kumuluz.ee.circuit.breaker.models.ConfigurationProperty;
-import com.kumuluz.ee.circuit.breaker.models.ExecutionMetadata;
+import com.kumuluz.ee.fault.tolerance.annotations.CircuitBreaker;
+import com.kumuluz.ee.fault.tolerance.annotations.CircuitBreakerGroup;
+import com.kumuluz.ee.fault.tolerance.models.CircuitBreakerConfigurationType;
+import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
+import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 import com.kumuluz.ee.configuration.ConfigurationListener;
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import org.jboss.weld.context.RequestContext;
@@ -49,7 +49,7 @@ public class CircuitBreakerUtil {
 
     private static final Logger log = Logger.getLogger(CircuitBreakerUtil.class.getName());
 
-    public static final String SERVICE_NAME = "circuit-breaker";
+    public static final String SERVICE_NAME = "fault-tolerance";
     private static final int QUEUE_PROCESS_LIMIT = 20;
 
     private static CircuitBreakerUtil instance;
@@ -62,7 +62,7 @@ public class CircuitBreakerUtil {
     private Map<String, ConfigurationListener> configListenersMap;
 
     @Inject
-    private CircuitBreakerExecutor circuitBreakerExecutor;
+    private FaultToleranceExecutor circuitBreakerExecutor;
 
     @PostConstruct
     public void init() {

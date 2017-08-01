@@ -3,16 +3,16 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>kumuluzee-circuit-breaker</artifactId>
-        <groupId>com.kumuluz.ee.circuit.breaker</groupId>
+        <artifactId>kumuluzee-fault-tolerance</artifactId>
+        <groupId>com.kumuluz.ee.fault.tolerance</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>KumuluzEE Circuit Breaker Common</name>
-    <description>Common artifacts for the KumuluzEE Circuit Breaker extension</description>
+    <name>KumuluzEE Fault Tolerance Common</name>
+    <description>Common artifacts for the KumuluzEE Fault Tolerance extension</description>
 
-    <artifactId>kumuluzee-circuit-breaker-common</artifactId>
+    <artifactId>kumuluzee-fault-tolerance-common</artifactId>
 
     <dependencies>
         <dependency>

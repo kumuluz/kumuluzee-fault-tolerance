@@ -18,10 +18,10 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.circuit.breaker.models;
+package com.kumuluz.ee.fault.tolerance.models;
 
-import com.kumuluz.ee.circuit.breaker.utils.CircuitBreakerHelper;
-import com.kumuluz.ee.circuit.breaker.utils.CircuitBreakerUtil;
+import com.kumuluz.ee.fault.tolerance.utils.CircuitBreakerHelper;
+import com.kumuluz.ee.fault.tolerance.utils.CircuitBreakerUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;

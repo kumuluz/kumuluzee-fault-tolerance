@@ -18,9 +18,9 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.circuit.breaker.utils;
+package com.kumuluz.ee.fault.tolerance.utils;
 
-import com.kumuluz.ee.circuit.breaker.models.CircuitBreakerConfigurationType;
+import com.kumuluz.ee.fault.tolerance.models.CircuitBreakerConfigurationType;
 
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;

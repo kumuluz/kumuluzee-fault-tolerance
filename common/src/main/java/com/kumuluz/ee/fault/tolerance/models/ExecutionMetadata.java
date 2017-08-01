@@ -18,7 +18,7 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.circuit.breaker.models;
+package com.kumuluz.ee.fault.tolerance.models;
 
 import java.lang.reflect.Method;
 

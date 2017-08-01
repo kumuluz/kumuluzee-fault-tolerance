@@ -18,7 +18,7 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.circuit.breaker;
+package com.kumuluz.ee.fault.tolerance;
 
 import com.kumuluz.ee.common.Extension;
 import com.kumuluz.ee.common.config.EeConfig;
@@ -35,11 +35,11 @@ import org.slf4j.LoggerFactory;
  *
  * @author Luka Šarc
  */
-@EeExtensionDef(name = "hystrix", type = EeExtensionType.CIRCUIT_BREAKER)
+@EeExtensionDef(name = "hystrix", type = EeExtensionType.FAULT_TOLERANCE)
 @EeComponentDependency(EeComponentType.CDI)
-public class HystrixCircuitBreakerExtension implements Extension {
+public class HystrixFaultToleranceExtension implements Extension {
 
-    private static final Logger log = LoggerFactory.getLogger(HystrixCircuitBreakerExtension.class);
+    private static final Logger log = LoggerFactory.getLogger(HystrixFaultToleranceExtension.class);
 
     @Override
     public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {

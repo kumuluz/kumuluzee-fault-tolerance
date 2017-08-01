@@ -18,10 +18,10 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.circuit.breaker.utils;
+package com.kumuluz.ee.fault.tolerance.utils;
 
-import com.kumuluz.ee.circuit.breaker.models.ConfigurationProperty;
-import com.kumuluz.ee.circuit.breaker.models.ExecutionMetadata;
+import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
+import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 import org.jboss.weld.context.RequestContext;
 
 import javax.interceptor.InvocationContext;
@@ -32,7 +32,7 @@ import javax.interceptor.InvocationContext;
  *
  * @author Luka Šarc
  */
-public interface CircuitBreakerExecutor {
+public interface FaultToleranceExecutor {
 
     String getName();
 

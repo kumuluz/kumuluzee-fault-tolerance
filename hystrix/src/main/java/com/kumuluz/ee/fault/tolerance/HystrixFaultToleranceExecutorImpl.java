@@ -18,16 +18,16 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.circuit.breaker;
+package com.kumuluz.ee.fault.tolerance;
 
-import com.kumuluz.ee.circuit.breaker.commands.HystrixGenericCommand;
-import com.kumuluz.ee.circuit.breaker.models.CircuitBreakerConfigurationType;
-import com.kumuluz.ee.circuit.breaker.models.ConfigurationProperty;
-import com.kumuluz.ee.circuit.breaker.models.ExecutionMetadata;
-import com.kumuluz.ee.circuit.breaker.utils.CircuitBreakerExecutor;
-import com.kumuluz.ee.circuit.breaker.utils.CircuitBreakerHelper;
-import com.kumuluz.ee.circuit.breaker.utils.CircuitBreakerUtil;
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
+import com.kumuluz.ee.fault.tolerance.commands.HystrixGenericCommand;
+import com.kumuluz.ee.fault.tolerance.models.CircuitBreakerConfigurationType;
+import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
+import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
+import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceExecutor;
+import com.kumuluz.ee.fault.tolerance.utils.CircuitBreakerHelper;
+import com.kumuluz.ee.fault.tolerance.utils.CircuitBreakerUtil;
 import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.*;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
@@ -48,11 +48,11 @@ import java.util.logging.Logger;
  * @author Luka Šarc
  */
 @RequestScoped
-public class HystrixCircuitBreakerExecutorImpl implements CircuitBreakerExecutor {
+public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor {
 
     private static final String NAME = "hystrix";
 
-    private static final Logger log = Logger.getLogger(HystrixCircuitBreakerExecutorImpl.class.getName());
+    private static final Logger log = Logger.getLogger(HystrixFaultToleranceExecutorImpl.class.getName());
 
     private static HashMap<String, HystrixCommand.Setter> hystrixCommandSetters;
     private static HashMap<String, HystrixCommandKey> hystrixCommandKeys;

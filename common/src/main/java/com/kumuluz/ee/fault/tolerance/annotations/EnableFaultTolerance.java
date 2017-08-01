@@ -18,9 +18,8 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.circuit.breaker.annotations;
+package com.kumuluz.ee.fault.tolerance.annotations;
 
-import javax.enterprise.util.Nonbinding;
 import javax.interceptor.InterceptorBinding;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -30,16 +29,13 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Annotation for setting circuit breaker group name to override default name.
+ * Annotation for enabling circuit breaker usage on CDI.
  *
  * @author Luka Šarc
  */
 @Inherited
 @InterceptorBinding
 @Retention(RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
-public @interface CircuitBreakerGroup {
-
-    @Nonbinding String value() default "";
-
+@Target({ElementType.TYPE})
+public @interface EnableFaultTolerance {
 }

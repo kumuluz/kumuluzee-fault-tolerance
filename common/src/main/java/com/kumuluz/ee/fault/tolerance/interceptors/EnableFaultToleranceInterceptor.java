@@ -18,11 +18,11 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.circuit.breaker.interceptors;
+package com.kumuluz.ee.fault.tolerance.interceptors;
 
-import com.kumuluz.ee.circuit.breaker.annotations.CircuitBreaker;
-import com.kumuluz.ee.circuit.breaker.annotations.EnableCircuitBreaker;
-import com.kumuluz.ee.circuit.breaker.utils.CircuitBreakerUtil;
+import com.kumuluz.ee.fault.tolerance.annotations.CircuitBreaker;
+import com.kumuluz.ee.fault.tolerance.annotations.EnableFaultTolerance;
+import com.kumuluz.ee.fault.tolerance.utils.CircuitBreakerUtil;
 import org.jboss.weld.context.RequestContext;
 import org.jboss.weld.context.unbound.Unbound;
 
@@ -39,9 +39,9 @@ import java.lang.reflect.Method;
  * @author Luka Šarc
  */
 @Interceptor
-@EnableCircuitBreaker
+@EnableFaultTolerance
 @Priority(Interceptor.Priority.PLATFORM_AFTER)
-public class EnableCircuitBreakerInterceptor {
+public class EnableFaultToleranceInterceptor {
 
     @Inject
     private CircuitBreakerUtil circuitBreakerUtil;

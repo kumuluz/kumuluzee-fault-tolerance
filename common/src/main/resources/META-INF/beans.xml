@@ -4,6 +4,6 @@
        bean-discovery-mode="annotated">
 
     <interceptors>
-        <class>com.kumuluz.ee.circuit.breaker.interceptors.EnableCircuitBreakerInterceptor</class>
+        <class>com.kumuluz.ee.fault.tolerance.interceptors.EnableFaultToleranceInterceptor</class>
     </interceptors>
 </beans>

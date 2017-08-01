@@ -18,9 +18,9 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.circuit.breaker.commands;
+package com.kumuluz.ee.fault.tolerance.commands;
 
-import com.kumuluz.ee.circuit.breaker.models.ExecutionMetadata;
+import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandProperties;
