@@ -18,38 +18,15 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.models;
+package com.kumuluz.ee.fault.tolerance.interfaces;
 
 /**
- * Enum type for circuit breaker configuration type.
+ * Interface for classes to be called on fallback execution
  *
  * @author Luka Šarc
  */
-public enum CircuitBreakerConfigurationType {
+public interface FallbackHandler<T> {
 
-    COMMAND("commands"),
-    THREAD_POOL("thread-pools"),
-    GROUP("groups");
+    T handle(ExecutionContext context);
 
-    private final String configKey;
-
-    CircuitBreakerConfigurationType(String configKey) {
-        this.configKey = configKey;
-    }
-
-    public String getConfigKey() {
-        return configKey;
-    }
-
-    public static CircuitBreakerConfigurationType toEnum(String str) {
-
-        if (str.equals(COMMAND.getConfigKey()))
-            return COMMAND;
-        else if (str.equals(THREAD_POOL.getConfigKey()))
-            return THREAD_POOL;
-        else if (str.equals(GROUP.getConfigKey()))
-            return GROUP;
-        else
-            return null;
-    }
 }

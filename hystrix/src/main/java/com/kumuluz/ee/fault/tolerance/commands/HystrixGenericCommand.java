@@ -20,6 +20,8 @@
  */
 package com.kumuluz.ee.fault.tolerance.commands;
 
+import com.kumuluz.ee.fault.tolerance.interfaces.FallbackHandler;
+import com.kumuluz.ee.fault.tolerance.models.DefaultFallbackExecutionContext;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.HystrixCommand;
@@ -95,12 +97,27 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
         }
 
         try {
-            return metadata.getFallbackMethod()
-                    .invoke(invocationContext.getTarget(),
-                            invocationContext.getParameters());
+            if (metadata.getFallbackHandlerClass() != null) {
+                FallbackHandler fallbackHandler = metadata.getFallbackHandlerClass().newInstance();
+
+                DefaultFallbackExecutionContext executionContext = new DefaultFallbackExecutionContext();
+                executionContext.setMethod(metadata.getMethod());
+                executionContext.setParameters(invocationContext.getParameters());
+
+                return fallbackHandler.handle(executionContext);
+            } else if (metadata.getFallbackMethod() != null) {
+                return metadata.getFallbackMethod()
+                        .invoke(invocationContext.getTarget(),
+                                invocationContext.getParameters());
+            } else {
+                log.severe("Fallback should not be invoked if both fallback mechanisms (" +
+                        "fallbackHandler and fallbackMethod) are unedfined.");
+            }
         } catch (IllegalAccessException|InvocationTargetException e) {
             log.severe("Exception occured while trying to invoke fallback method for key '" +
                     metadata.getCommandKey() + "': " + e.getClass().getName());
+            e.printStackTrace();
+        } catch (InstantiationException e) {
             e.printStackTrace();
         }
 
@@ -109,16 +126,16 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
 
     private boolean isFallbackInvokeable(Throwable e) {
 
-        Class[] skipFallbackClasses = metadata.getSkipFallbackExceptions();
+        Class[] failOn = metadata.getFailOn();
 
-        if (skipFallbackClasses != null) {
-            for (Class<?> fe : metadata.getSkipFallbackExceptions()) {
-                if (fe.isInstance(e))
-                    return false;
+        if (failOn != null) {
+            for (Class<? extends Throwable> fo : failOn) {
+                if (fo.isInstance(e))
+                    return true;
             }
         }
 
-        return true;
+        return false;
     }
 
 }

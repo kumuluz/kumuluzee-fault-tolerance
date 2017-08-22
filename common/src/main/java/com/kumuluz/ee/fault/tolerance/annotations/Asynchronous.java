@@ -20,38 +20,22 @@
  */
 package com.kumuluz.ee.fault.tolerance.annotations;
 
-import javax.enterprise.util.Nonbinding;
 import javax.interceptor.InterceptorBinding;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import java.time.temporal.ChronoUnit;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Annotation applying circuit breker pattern to either method
- * or class
+ * Annotation applying asynchronous (thread isolated) method execution
  *
  * @author Luka Šarc
  */
 @Inherited
 @InterceptorBinding
 @Retention(RUNTIME)
-@Target({ElementType.METHOD, ElementType.TYPE})
-public @interface CircuitBreaker {
-
-    @Nonbinding Class<? extends Throwable>[] failOn() default {Throwable.class};
-
-    @Nonbinding int delay() default -1;
-
-    @Nonbinding ChronoUnit delayUnit() default ChronoUnit.MILLIS;
-
-    @Nonbinding int requestVolumeThreshold() default 20;
-
-    @Nonbinding double failureRatio() default .50;
-
-    @Nonbinding int successThreshold() default 1;
-
+@Target({ ElementType.METHOD, ElementType.TYPE })
+public @interface Asynchronous {
 }

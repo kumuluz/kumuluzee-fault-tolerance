@@ -20,9 +20,10 @@
  */
 package com.kumuluz.ee.fault.tolerance.utils;
 
-import com.kumuluz.ee.fault.tolerance.models.CircuitBreakerConfigurationType;
+import com.kumuluz.ee.fault.tolerance.models.FaultToleranceConfigurationType;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.logging.Logger;
 
 /**
@@ -30,16 +31,16 @@ import java.util.logging.Logger;
  *
  * @author Luka Šarc
  */
-public class CircuitBreakerHelper {
+public class FaultToleranceHelper {
 
-    private static final Logger log = Logger.getLogger(CircuitBreakerHelper.class.getName());
+    private static final Logger log = Logger.getLogger(FaultToleranceHelper.class.getName());
 
-    public static String getBaseConfigPath(CircuitBreakerConfigurationType type, String typeKey, String executorName) {
+    public static String getBaseConfigPath(FaultToleranceConfigurationType type, String typeKey, String executorName) {
 
-        String basePath = CircuitBreakerUtil.SERVICE_NAME;
+        String basePath = FaultToleranceUtil.SERVICE_NAME;
         String typePath = type.getConfigKey() + "." + typeKey;
 
-        if (executorName != null && type == CircuitBreakerConfigurationType.COMMAND) {
+        if (executorName != null && type == FaultToleranceConfigurationType.COMMAND) {
             typePath += "." + executorName;
         } else if (executorName != null) {
             basePath += "." + executorName;
@@ -48,30 +49,38 @@ public class CircuitBreakerHelper {
         return basePath + "." + typePath;
     }
 
-    public static int parseTime(String str) {
+    public static Duration parseDuration(String str) {
+
+        long value = parseTime(str);
+        ChronoUnit unit = parseTimeUnit(str);
+
+        return Duration.of(value, unit);
+    }
+
+    public static long parseTime(String str) {
 
         try {
-            return Integer.parseInt(str.replaceAll("\\D+", ""));
+            return Long.parseLong(str.replaceAll("\\D+", ""));
         } catch (NumberFormatException e) {
             log.warning("Parsing of value '" + str + "' to time failed.");
             return 0;
         }
     }
 
-    public static TimeUnit parseTimeUnit(String str) {
+    public static ChronoUnit parseTimeUnit(String str) {
 
         String unit = str.replaceAll("\\d+", "");
 
         switch (unit) {
             case "m":
-                return TimeUnit.MINUTES;
+                return ChronoUnit.MINUTES;
             case "s":
-                return TimeUnit.SECONDS;
+                return ChronoUnit.SECONDS;
             case "ns":
-                return TimeUnit.NANOSECONDS;
+                return ChronoUnit.NANOS;
             case "ms":
             default:
-                return TimeUnit.MILLISECONDS;
+                return ChronoUnit.MILLIS;
         }
     }
 

@@ -20,13 +20,13 @@
  */
 package com.kumuluz.ee.fault.tolerance.models;
 
-import com.kumuluz.ee.fault.tolerance.utils.CircuitBreakerHelper;
-import com.kumuluz.ee.fault.tolerance.utils.CircuitBreakerUtil;
+import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceHelper;
+import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceUtil;
 
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Model for holding information about configuration properties and assigned values.
@@ -36,21 +36,21 @@ import java.util.concurrent.TimeUnit;
 public class ConfigurationProperty {
 
     private final String executorName;
-    private final CircuitBreakerConfigurationType type;
+    private final FaultToleranceConfigurationType type;
     private final String typeKey;
     private final String property;
 
     private Object value;
-    private TimeUnit timeUnit;
+    private ChronoUnit unit;
 
-    public ConfigurationProperty(CircuitBreakerConfigurationType type, String typeKey, String property) {
+    public ConfigurationProperty(FaultToleranceConfigurationType type, String typeKey, String property) {
         this.executorName = null;
         this.type = type;
         this.typeKey = typeKey;
         this.property = property;
     }
 
-    public ConfigurationProperty(String executorName, CircuitBreakerConfigurationType type, String typeKey, String property) {
+    public ConfigurationProperty(String executorName, FaultToleranceConfigurationType type, String typeKey, String property) {
         this.executorName = executorName;
         this.type = type;
         this.typeKey = typeKey;
@@ -61,7 +61,7 @@ public class ConfigurationProperty {
         return executorName;
     }
 
-    public CircuitBreakerConfigurationType getType() {
+    public FaultToleranceConfigurationType getType() {
         return type;
     }
 
@@ -81,37 +81,37 @@ public class ConfigurationProperty {
         this.value = value;
     }
 
-    public TimeUnit getTimeUnit() {
-        return timeUnit;
+    public ChronoUnit getUnit() {
+        return unit;
     }
 
-    public void setTimeUnit(TimeUnit timeUnit) {
-        this.timeUnit = timeUnit;
+    public void setUnit(ChronoUnit unit) {
+        this.unit = unit;
     }
 
     public String configurationPath() {
-        return CircuitBreakerHelper.getBaseConfigPath(type, typeKey, executorName) + "." + property;
+        return FaultToleranceHelper.getBaseConfigPath(type, typeKey, executorName) + "." + property;
     }
 
     public static ConfigurationProperty create(String keyPath) {
 
         List<String> keyPathSplit = new ArrayList<String>(Arrays.asList(keyPath.split("\\.")));
 
-        if (keyPathSplit.size() > 3 && keyPathSplit.get(0).equals(CircuitBreakerUtil.SERVICE_NAME)) {
+        if (keyPathSplit.size() > 3 && keyPathSplit.get(0).equals(FaultToleranceUtil.SERVICE_NAME)) {
 
             String executorName = null;
-            CircuitBreakerConfigurationType type = CircuitBreakerConfigurationType.toEnum(keyPathSplit.get(1));
+            FaultToleranceConfigurationType type = FaultToleranceConfigurationType.toEnum(keyPathSplit.get(1));
             String typeKey = keyPathSplit.get(2);
             String propertyKey = keyPathSplit.get(3);
 
             if (keyPathSplit.size() > 4) {
                 propertyKey = keyPathSplit.get(4);
 
-                if (type == CircuitBreakerConfigurationType.COMMAND) {
+                if (type == FaultToleranceConfigurationType.COMMAND) {
                     executorName = keyPathSplit.get(3);
                 } else {
                     executorName = keyPathSplit.get(1);
-                    type = CircuitBreakerConfigurationType.toEnum(keyPathSplit.get(2));
+                    type = FaultToleranceConfigurationType.toEnum(keyPathSplit.get(2));
                     typeKey = keyPathSplit.get(3);
                 }
             }

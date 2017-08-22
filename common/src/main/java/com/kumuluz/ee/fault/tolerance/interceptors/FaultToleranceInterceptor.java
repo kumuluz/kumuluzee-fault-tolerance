@@ -21,8 +21,8 @@
 package com.kumuluz.ee.fault.tolerance.interceptors;
 
 import com.kumuluz.ee.fault.tolerance.annotations.CircuitBreaker;
-import com.kumuluz.ee.fault.tolerance.annotations.EnableFaultTolerance;
-import com.kumuluz.ee.fault.tolerance.utils.CircuitBreakerUtil;
+import com.kumuluz.ee.fault.tolerance.annotations.Timeout;
+import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceUtil;
 import org.jboss.weld.context.RequestContext;
 import org.jboss.weld.context.unbound.Unbound;
 
@@ -31,7 +31,6 @@ import javax.inject.Inject;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
-import java.lang.reflect.Method;
 
 /**
  * Interceptor for handling circuit breaker execution.
@@ -39,27 +38,21 @@ import java.lang.reflect.Method;
  * @author Luka Šarc
  */
 @Interceptor
-@EnableFaultTolerance
+@CircuitBreaker
+@Timeout
 @Priority(Interceptor.Priority.PLATFORM_AFTER)
-public class EnableFaultToleranceInterceptor {
+public class FaultToleranceInterceptor {
 
     @Inject
-    private CircuitBreakerUtil circuitBreakerUtil;
+    private FaultToleranceUtil faultToleranceUtil;
 
     @Inject
     @Unbound
     private RequestContext requestContext;
 
     @AroundInvoke
-    public Object executeWithCircuitBreaker(InvocationContext invocationContext) throws Exception {
-
-        Method targetMethod = invocationContext.getMethod();
-
-        if (targetMethod.isAnnotationPresent(CircuitBreaker.class)) {
-            return circuitBreakerUtil.execute(invocationContext, requestContext);
-        } else {
-            return invocationContext.proceed();
-        }
+    public Object executeFaultTolerance(InvocationContext invocationContext) throws Exception {
+        return faultToleranceUtil.execute(invocationContext, requestContext);
     }
 
 }

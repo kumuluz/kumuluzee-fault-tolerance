@@ -20,6 +20,10 @@
  */
 package com.kumuluz.ee.fault.tolerance.annotations;
 
+import com.kumuluz.ee.fault.tolerance.interfaces.ExecutionContext;
+import com.kumuluz.ee.fault.tolerance.interfaces.FallbackHandler;
+
+import javax.enterprise.util.Nonbinding;
 import javax.interceptor.InterceptorBinding;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -29,13 +33,26 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Annotation for enabling circuit breaker usage on CDI.
+ * Annotation applying fallback to circuit breaker or repeat pattern
+ * on either method or class
  *
  * @author Luka Šarc
  */
 @Inherited
 @InterceptorBinding
 @Retention(RUNTIME)
-@Target({ElementType.TYPE})
-public @interface EnableFaultTolerance {
+@Target({ElementType.METHOD, ElementType.TYPE})
+public @interface Fallback {
+
+    class DEFAULT implements FallbackHandler<Void> {
+        @Override
+        public Void handle(ExecutionContext context) {
+            return null;
+        }
+    }
+
+    @Nonbinding Class<? extends FallbackHandler<?>> value() default DEFAULT.class;
+
+    @Nonbinding String fallbackMethod() default "";
+
 }

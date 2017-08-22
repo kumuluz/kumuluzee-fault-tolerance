@@ -22,12 +22,12 @@ package com.kumuluz.ee.fault.tolerance;
 
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import com.kumuluz.ee.fault.tolerance.commands.HystrixGenericCommand;
-import com.kumuluz.ee.fault.tolerance.models.CircuitBreakerConfigurationType;
+import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceExecutor;
 import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
-import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceExecutor;
-import com.kumuluz.ee.fault.tolerance.utils.CircuitBreakerHelper;
-import com.kumuluz.ee.fault.tolerance.utils.CircuitBreakerUtil;
+import com.kumuluz.ee.fault.tolerance.models.FaultToleranceConfigurationType;
+import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceHelper;
+import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceUtil;
 import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.*;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
@@ -37,9 +37,10 @@ import org.jboss.weld.context.RequestContext;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.interceptor.InvocationContext;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -64,7 +65,7 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
     private static HashMap<String, String> threadPoolPropertiesMap;
 
     @Inject
-    private CircuitBreakerUtil circuitBreakerUtil;
+    private FaultToleranceUtil faultToleranceUtil;
 
     static {
         hystrixCommandSetters = new HashMap<>();
@@ -78,9 +79,9 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
 
         // annotation confgigurable or general properties
         generalPropertiesMap.put("timeout", "execution.isolation.thread.timeoutInMilliseconds");
-        generalPropertiesMap.put("request-threshold", "circuitBreaker.requestVolumeThreshold");
-        generalPropertiesMap.put("failure-threshold", "circuitBreaker.errorThresholdPercentage");
-        generalPropertiesMap.put("open-circuit-wait", "circuitBreaker.sleepWindowInMilliseconds");
+        generalPropertiesMap.put("request-volume-threshold", "circuitBreaker.requestVolumeThreshold");
+        generalPropertiesMap.put("failure-ratio", "circuitBreaker.errorThresholdPercentage");
+        generalPropertiesMap.put("delay", "circuitBreaker.sleepWindowInMilliseconds");
         generalPropertiesMap.put("force-open", "circuitBreaker.forceOpen");
         generalPropertiesMap.put("force-closed", "circuitBreaker.forceClosed");
 
@@ -148,7 +149,7 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
             return;
 
         String hystrixPropertyKey = toHystrixPropertyKey(property.getType(), property.getTypeKey(), hystrixProperty);
-        Object hystrixPropertyValue = toHystrixPropertyValue(hystrixProperty, property.getValue(), property.getTimeUnit());
+        Object hystrixPropertyValue = toHystrixPropertyValue(hystrixProperty, property.getValue());
 
         log.finest("Setting hystrix configuration property '" + hystrixPropertyKey +
                 "' with value '" + hystrixPropertyValue + "'.");
@@ -162,8 +163,15 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         String hystrixProperty = mapConfigProperty(property.getExecutorName(), property.getType(), property.getProperty());
         String hystrixPropertyKey = toHystrixPropertyKey(property.getType(), property.getTypeKey(), hystrixProperty);
 
-        property.setValue(getHystrixProperty(hystrixPropertyKey));
-        property.setTimeUnit(getHystrixPropertyTimeUnit(hystrixProperty));
+        Object value = getHystrixProperty(hystrixPropertyKey);
+        ChronoUnit timeUnit = getHystrixPropertyTimeUnit(hystrixProperty);
+
+        if (timeUnit != null) {
+            Long valueLong = FaultToleranceHelper.toLongValue(value);
+            property.setValue(Duration.of(valueLong, timeUnit));
+        } else {
+            property.setValue(getHystrixProperty(hystrixPropertyKey));
+        }
 
         return property;
     }
@@ -204,14 +212,14 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         initializeCommandProperties(key);
 
         // check if fallback is not defined and disable its execution
-        if (metadata.getFallbackMethod() == null) {
-            ConfigurationProperty configProperty = new ConfigurationProperty(getName(), CircuitBreakerConfigurationType.COMMAND,
+        if (metadata.getFallbackHandlerClass() == null && metadata.getFallbackMethod() == null) {
+            ConfigurationProperty configProperty = new ConfigurationProperty(getName(), FaultToleranceConfigurationType.COMMAND,
                     key, "fallback-enabled");
             String hystrixConfigProperty = toHystrixPropertyKey(configProperty.getType(), configProperty.getTypeKey(),
                     commandPropertiesMap.get(configProperty.getProperty()));
 
             setHystrixProperty(hystrixConfigProperty, false);
-            circuitBreakerUtil.removeWatch(configProperty);
+            faultToleranceUtil.removeWatch(configProperty);
         }
 
         hystrixCommandKeys.put(key, commandKey);
@@ -230,7 +238,7 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
     private HystrixThreadPoolKey getHystrixThreadPoolKey(ExecutionMetadata metadata) {
 
         String key = metadata.getGroupKey();
-        String configKey = CircuitBreakerHelper.getBaseConfigPath(CircuitBreakerConfigurationType.COMMAND,
+        String configKey = FaultToleranceHelper.getBaseConfigPath(FaultToleranceConfigurationType.COMMAND,
                 metadata.getCommandKey(), getName());
 
         Optional<String> optionalKey = ConfigurationUtil.getInstance().get(configKey + ".thread-pool");
@@ -262,10 +270,10 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
 
         log.finest("Initializing Hystrix command properties for key '" + commandKey + "'.");
 
-        commonPropertiesMap.entrySet().forEach(entry -> initializeProperty(CircuitBreakerConfigurationType.COMMAND,
+        commonPropertiesMap.entrySet().forEach(entry -> initializeProperty(FaultToleranceConfigurationType.COMMAND,
                 commandKey, entry.getKey(), entry.getValue()));
 
-        commandPropertiesMap.entrySet().forEach(entry -> initializeProperty(CircuitBreakerConfigurationType.COMMAND,
+        commandPropertiesMap.entrySet().forEach(entry -> initializeProperty(FaultToleranceConfigurationType.COMMAND,
                 commandKey, entry.getKey(), entry.getValue()));
     }
 
@@ -273,14 +281,14 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
 
         log.finest("Initializing Hystrix thread pool properties for key '" + threadPoolKey + "'.");
 
-        commonPropertiesMap.entrySet().forEach(entry -> initializeProperty(CircuitBreakerConfigurationType.THREAD_POOL,
+        commonPropertiesMap.entrySet().forEach(entry -> initializeProperty(FaultToleranceConfigurationType.THREAD_POOL,
                 threadPoolKey, entry.getKey(), entry.getValue()));
 
-        threadPoolPropertiesMap.entrySet().forEach(entry -> initializeProperty(CircuitBreakerConfigurationType.THREAD_POOL,
+        threadPoolPropertiesMap.entrySet().forEach(entry -> initializeProperty(FaultToleranceConfigurationType.THREAD_POOL,
                 threadPoolKey, entry.getKey(), entry.getValue()));
     }
 
-    private void initializeProperty(CircuitBreakerConfigurationType type, String typeName, String configKey, String hystrixPropertyKey) {
+    private void initializeProperty(FaultToleranceConfigurationType type, String typeName, String configKey, String hystrixPropertyKey) {
 
         ConfigurationProperty property = new ConfigurationProperty(getName(), type, typeName, configKey);
         Optional<String> optionalValue = ConfigurationUtil.getInstance()
@@ -290,16 +298,15 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
             String key = toHystrixPropertyKey(type, typeName, hystrixPropertyKey);
             Object value = null;
 
-            if (CircuitBreakerHelper.isInt(optionalValue.get())) {
+            if (FaultToleranceHelper.isInt(optionalValue.get())) {
                 value = toHystrixPropertyValue(hystrixPropertyKey,
-                        CircuitBreakerHelper.parseInt(optionalValue.get()));
-            } else if (CircuitBreakerHelper.isBoolean(optionalValue.get())) {
+                        FaultToleranceHelper.parseInt(optionalValue.get()));
+            } else if (FaultToleranceHelper.isBoolean(optionalValue.get())) {
                 value = toHystrixPropertyValue(hystrixPropertyKey,
-                        CircuitBreakerHelper.parseBoolean(optionalValue.get()));
-            } else if (CircuitBreakerHelper.isTime(optionalValue.get())) {
+                        FaultToleranceHelper.parseBoolean(optionalValue.get()));
+            } else if (FaultToleranceHelper.isTime(optionalValue.get())) {
                 value = toHystrixPropertyValue(hystrixPropertyKey,
-                        CircuitBreakerHelper.parseTime(optionalValue.get()),
-                        CircuitBreakerHelper.parseTimeUnit(optionalValue.get()));
+                        FaultToleranceHelper.parseDuration(optionalValue.get()));
             } else {
                 value = toHystrixPropertyValue(hystrixPropertyKey,
                         optionalValue.get());
@@ -310,26 +317,26 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         }
 
         if (isPropertyChangeAvailable(hystrixPropertyKey))
-            circuitBreakerUtil.watch(property);
+            faultToleranceUtil.watch(property);
     }
 
-    private String mapConfigProperty(String executor, CircuitBreakerConfigurationType type, String property) {
+    private String mapConfigProperty(String executor, FaultToleranceConfigurationType type, String property) {
 
         if (executor == null) {
             return generalPropertiesMap.get(property);
         } else if (executor.equals(getName())) {
             if (commonPropertiesMap.containsKey(property))
                 return commonPropertiesMap.get(property);
-            else if (type == CircuitBreakerConfigurationType.COMMAND)
+            else if (type == FaultToleranceConfigurationType.COMMAND)
                 return commandPropertiesMap.get(property);
-            else if (type == CircuitBreakerConfigurationType.THREAD_POOL)
+            else if (type == FaultToleranceConfigurationType.THREAD_POOL)
                 return threadPoolPropertiesMap.get(property);
         }
 
         return null;
     }
 
-    private String toHystrixPropertyKey(CircuitBreakerConfigurationType type, String typeKey, String property) {
+    private String toHystrixPropertyKey(FaultToleranceConfigurationType type, String typeKey, String property) {
 
         String base;
 
@@ -349,28 +356,27 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
     }
 
     private Object toHystrixPropertyValue(String key, Object value) {
-        return toHystrixPropertyValue(key, value, null);
-    }
 
-    private Object toHystrixPropertyValue(String key, Object value, TimeUnit timeUnit) {
-
-        TimeUnit propertyTimeUnit = getHystrixPropertyTimeUnit(key);
-        timeUnit = timeUnit != null ? timeUnit : TimeUnit.MILLISECONDS;
+        ChronoUnit propChronoUnit = getHystrixPropertyTimeUnit(key);
 
         if (key.equals("execution.isolation.strategy")) {
             return value.equals("semaphore") ?
                     HystrixCommandProperties.ExecutionIsolationStrategy.SEMAPHORE:
                     HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
-        } else if (propertyTimeUnit != null && propertyTimeUnit.equals(TimeUnit.MILLISECONDS)) {
-            return timeUnit.toMillis(CircuitBreakerHelper.toIntValue(value));
-        } else if (propertyTimeUnit != null && propertyTimeUnit.equals(TimeUnit.MINUTES)) {
-            return timeUnit.toMinutes(CircuitBreakerHelper.toIntValue(value));
+        } else if (propChronoUnit != null && value instanceof Duration) {
+            switch (propChronoUnit) {
+                case MINUTES:
+                    return ((Duration) value).toMinutes();
+                case MILLIS:
+                default:
+                    return ((Duration) value).toMillis();
+            }
         } else {
             return value;
         }
     }
 
-    private TimeUnit getHystrixPropertyTimeUnit(String key) {
+    private ChronoUnit getHystrixPropertyTimeUnit(String key) {
 
         switch (key) {
             case "execution.isolation.thread.timeoutInMilliseconds":
@@ -378,9 +384,9 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
             case "metrics.rollingStats.timeInMilliseconds":
             case "metrics.rollingPercentile.timeInMilliseconds":
             case "metrics.healthSnapshot.intervalInMilliseconds":
-                return TimeUnit.MILLISECONDS;
+                return ChronoUnit.MILLIS;
             case "keepAliveTimeMinutes":
-                return TimeUnit.MINUTES;
+                return ChronoUnit.MINUTES;
             default:
                 return null;
         }

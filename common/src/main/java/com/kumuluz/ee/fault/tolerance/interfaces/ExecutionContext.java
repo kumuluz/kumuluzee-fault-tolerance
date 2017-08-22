@@ -18,40 +18,19 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.annotations;
+package com.kumuluz.ee.fault.tolerance.interfaces;
 
-import javax.enterprise.util.Nonbinding;
-import javax.interceptor.InterceptorBinding;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-import java.time.temporal.ChronoUnit;
-
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import java.lang.reflect.Method;
 
 /**
- * Annotation applying circuit breker pattern to either method
- * or class
+ * Interface for execution context setting methods and parameters
  *
  * @author Luka Šarc
  */
-@Inherited
-@InterceptorBinding
-@Retention(RUNTIME)
-@Target({ElementType.METHOD, ElementType.TYPE})
-public @interface CircuitBreaker {
+public interface ExecutionContext {
 
-    @Nonbinding Class<? extends Throwable>[] failOn() default {Throwable.class};
+    Method getMethod();
 
-    @Nonbinding int delay() default -1;
-
-    @Nonbinding ChronoUnit delayUnit() default ChronoUnit.MILLIS;
-
-    @Nonbinding int requestVolumeThreshold() default 20;
-
-    @Nonbinding double failureRatio() default .50;
-
-    @Nonbinding int successThreshold() default 1;
+    Object[] getParameters();
 
 }

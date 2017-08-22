@@ -18,28 +18,37 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.utils;
+package com.kumuluz.ee.fault.tolerance.models;
 
-import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
-import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
-import org.jboss.weld.context.RequestContext;
+import com.kumuluz.ee.fault.tolerance.interfaces.ExecutionContext;
 
-import javax.interceptor.InvocationContext;
+import java.lang.reflect.Method;
 
 /**
- * Interface for implementing circuit breaker executor for specific
- * circuit breaker library.
+ * Default ExecutionContext implementation for fallback
  *
  * @author Luka Šarc
  */
-public interface FaultToleranceExecutor {
+public class DefaultFallbackExecutionContext implements ExecutionContext {
 
-    String getName();
+    private Method method;
+    private Object[] parameters;
 
-    Object execute(InvocationContext invocationContext, RequestContext requestContext, ExecutionMetadata coreConfig) throws Exception;
+    public void setMethod(Method method) {
+        this.method = method;
+    }
 
-    void setPropertyValue(ConfigurationProperty property);
+    @Override
+    public Method getMethod() {
+        return null;
+    }
 
-    ConfigurationProperty getPropertyValue(ConfigurationProperty property);
+    public void setParameters(Object[] parameters) {
+        this.parameters = parameters;
+    }
 
+    @Override
+    public Object[] getParameters() {
+        return new Object[0];
+    }
 }

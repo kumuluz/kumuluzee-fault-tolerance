@@ -18,28 +18,28 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.annotations;
+package com.kumuluz.ee.fault.tolerance.interfaces;
 
-import javax.enterprise.util.Nonbinding;
-import javax.interceptor.InterceptorBinding;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
+import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
+import org.jboss.weld.context.RequestContext;
 
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import javax.interceptor.InvocationContext;
 
 /**
- * Annotation for setting circuit breaker group name to override default name.
+ * Interface for implementing circuit breaker executor for specific
+ * circuit breaker library.
  *
  * @author Luka Šarc
  */
-@Inherited
-@InterceptorBinding
-@Retention(RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
-public @interface CircuitBreakerGroup {
+public interface FaultToleranceExecutor {
 
-    @Nonbinding String value() default "";
+    String getName();
+
+    Object execute(InvocationContext invocationContext, RequestContext requestContext, ExecutionMetadata coreConfig) throws Exception;
+
+    void setPropertyValue(ConfigurationProperty property);
+
+    ConfigurationProperty getPropertyValue(ConfigurationProperty property);
 
 }

@@ -20,6 +20,8 @@
  */
 package com.kumuluz.ee.fault.tolerance.models;
 
+import com.kumuluz.ee.fault.tolerance.interfaces.FallbackHandler;
+
 import java.lang.reflect.Method;
 
 /**
@@ -31,23 +33,29 @@ public class ExecutionMetadata {
 
     protected final Class targetClass;
     protected final Method method;
+    protected final Class<? extends FallbackHandler> fallbackHandlerClass;
     protected final Method fallbackMethod;
 
     protected final String commandKey;
     protected final String groupKey;
-    protected final Class<?>[] skipFallbackExceptions;
+    protected final Class<? extends Throwable>[] failOn;
 
-    public ExecutionMetadata(Class targetClass, Method method, Method fallbackMethod, String commandKey, String groupKey, Class<?>[] skipFallbackExceptions) {
+    public ExecutionMetadata(Class targetClass, Method method, Class<? extends FallbackHandler> fallbackHandlerClass, Method fallbackMethod, String commandKey, String groupKey, Class<? extends Throwable>[] failOn) {
         this.targetClass = targetClass;
         this.method = method;
+        this.fallbackHandlerClass = fallbackHandlerClass;
         this.fallbackMethod = fallbackMethod;
         this.commandKey = commandKey;
         this.groupKey = groupKey;
-        this.skipFallbackExceptions = skipFallbackExceptions;
+        this.failOn = failOn;
     }
 
     public Method getMethod() {
         return method;
+    }
+
+    public Class<? extends FallbackHandler> getFallbackHandlerClass() {
+        return fallbackHandlerClass;
     }
 
     public Method getFallbackMethod() {
@@ -62,8 +70,8 @@ public class ExecutionMetadata {
         return groupKey;
     }
 
-    public Class<?>[] getSkipFallbackExceptions() {
-        return skipFallbackExceptions;
+    public Class<? extends Throwable>[] getFailOn() {
+        return failOn;
     }
 
     public Class getTargetClass() {

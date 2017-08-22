@@ -18,40 +18,38 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.annotations;
-
-import javax.enterprise.util.Nonbinding;
-import javax.interceptor.InterceptorBinding;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-import java.time.temporal.ChronoUnit;
-
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+package com.kumuluz.ee.fault.tolerance.models;
 
 /**
- * Annotation applying circuit breker pattern to either method
- * or class
+ * Enum type for circuit breaker configuration type.
  *
  * @author Luka Šarc
  */
-@Inherited
-@InterceptorBinding
-@Retention(RUNTIME)
-@Target({ElementType.METHOD, ElementType.TYPE})
-public @interface CircuitBreaker {
+public enum FaultToleranceConfigurationType {
 
-    @Nonbinding Class<? extends Throwable>[] failOn() default {Throwable.class};
+    COMMAND("commands"),
+    THREAD_POOL("thread-pools"),
+    GROUP("groups");
 
-    @Nonbinding int delay() default -1;
+    private final String configKey;
 
-    @Nonbinding ChronoUnit delayUnit() default ChronoUnit.MILLIS;
+    FaultToleranceConfigurationType(String configKey) {
+        this.configKey = configKey;
+    }
 
-    @Nonbinding int requestVolumeThreshold() default 20;
+    public String getConfigKey() {
+        return configKey;
+    }
 
-    @Nonbinding double failureRatio() default .50;
+    public static FaultToleranceConfigurationType toEnum(String str) {
 
-    @Nonbinding int successThreshold() default 1;
-
+        if (str.equals(COMMAND.getConfigKey()))
+            return COMMAND;
+        else if (str.equals(THREAD_POOL.getConfigKey()))
+            return THREAD_POOL;
+        else if (str.equals(GROUP.getConfigKey()))
+            return GROUP;
+        else
+            return null;
+    }
 }
