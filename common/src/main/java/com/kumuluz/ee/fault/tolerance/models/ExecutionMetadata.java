@@ -20,46 +20,46 @@
  */
 package com.kumuluz.ee.fault.tolerance.models;
 
+import com.kumuluz.ee.fault.tolerance.annotations.Bulkhead;
+import com.kumuluz.ee.fault.tolerance.annotations.CircuitBreaker;
+import com.kumuluz.ee.fault.tolerance.annotations.Timeout;
 import com.kumuluz.ee.fault.tolerance.interfaces.FallbackHandler;
 
 import java.lang.reflect.Method;
 
 /**
- * Model for holding information circuit breaker needs to execute method.
+ * Model for holding information fault tolerance needs to execute method.
  *
  * @author Luka Šarc
  */
 public class ExecutionMetadata {
 
-    protected final Class targetClass;
+    private final Class targetClass;
     protected final Method method;
-    protected final Class<? extends FallbackHandler> fallbackHandlerClass;
-    protected final Method fallbackMethod;
+    private final String commandKey;
+    private final String groupKey;
 
-    protected final String commandKey;
-    protected final String groupKey;
-    protected final Class<? extends Throwable>[] failOn;
+    private boolean asynchronous;
+    private Class<? extends FallbackHandler> fallbackHandlerClass;
+    private Method fallbackMethod;
 
-    public ExecutionMetadata(Class targetClass, Method method, Class<? extends FallbackHandler> fallbackHandlerClass, Method fallbackMethod, String commandKey, String groupKey, Class<? extends Throwable>[] failOn) {
+    private Bulkhead bulkhead;
+    private Timeout timeout;
+    private CircuitBreaker circuitBreaker;
+
+    public ExecutionMetadata(Class targetClass, Method method, String commandKey, String groupKey) {
         this.targetClass = targetClass;
         this.method = method;
-        this.fallbackHandlerClass = fallbackHandlerClass;
-        this.fallbackMethod = fallbackMethod;
         this.commandKey = commandKey;
         this.groupKey = groupKey;
-        this.failOn = failOn;
+    }
+
+    public Class getTargetClass() {
+        return targetClass;
     }
 
     public Method getMethod() {
         return method;
-    }
-
-    public Class<? extends FallbackHandler> getFallbackHandlerClass() {
-        return fallbackHandlerClass;
-    }
-
-    public Method getFallbackMethod() {
-        return fallbackMethod;
     }
 
     public String getCommandKey() {
@@ -70,12 +70,51 @@ public class ExecutionMetadata {
         return groupKey;
     }
 
-    public Class<? extends Throwable>[] getFailOn() {
-        return failOn;
+    public boolean isAsynchronous() {
+        return asynchronous;
     }
 
-    public Class getTargetClass() {
-        return targetClass;
+    public void setAsynchronous(boolean asynchronous) {
+        this.asynchronous = asynchronous;
     }
 
+    public Class<? extends FallbackHandler> getFallbackHandlerClass() {
+        return fallbackHandlerClass;
+    }
+
+    public void setFallbackHandlerClass(Class<? extends FallbackHandler> fallbackHandlerClass) {
+        this.fallbackHandlerClass = fallbackHandlerClass;
+    }
+
+    public Method getFallbackMethod() {
+        return fallbackMethod;
+    }
+
+    public void setFallbackMethod(Method fallbackMethod) {
+        this.fallbackMethod = fallbackMethod;
+    }
+
+    public Bulkhead getBulkhead() {
+        return bulkhead;
+    }
+
+    public void setBulkhead(Bulkhead bulkhead) {
+        this.bulkhead = bulkhead;
+    }
+
+    public Timeout getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(Timeout timeout) {
+        this.timeout = timeout;
+    }
+
+    public CircuitBreaker getCircuitBreaker() {
+        return circuitBreaker;
+    }
+
+    public void setCircuitBreaker(CircuitBreaker circuitBreaker) {
+        this.circuitBreaker = circuitBreaker;
+    }
 }

@@ -18,39 +18,44 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.interceptors;
-
-import com.kumuluz.ee.fault.tolerance.annotations.CircuitBreaker;
-import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceUtil;
-import org.jboss.weld.context.RequestContext;
-import org.jboss.weld.context.unbound.Unbound;
-
-import javax.annotation.Priority;
-import javax.inject.Inject;
-import javax.interceptor.AroundInvoke;
-import javax.interceptor.Interceptor;
-import javax.interceptor.InvocationContext;
+package com.kumuluz.ee.fault.tolerance.enums;
 
 /**
- * Interceptor for handling fault tolerance execution.
+ * Enum type for fault tolerance pattern type.
  *
  * @author Luka Šarc
  */
-@Interceptor
-@CircuitBreaker
-@Priority(Interceptor.Priority.PLATFORM_AFTER)
-public class FaultToleranceInterceptor {
+public enum FaultToleranceType {
 
-    @Inject
-    private FaultToleranceUtil faultToleranceUtil;
+    ASYNCHRONOUS("asynchronous"),
+    BULKHEAD("bulkhead"),
+    TIMEOUT("timeout"),
+    FALLBACK("fallback"),
+    CIRCUIT_BREAKER("circuit-breaker");
 
-    @Inject
-    @Unbound
-    private RequestContext requestContext;
+    private final String key;
 
-    @AroundInvoke
-    public Object executeFaultTolerance(InvocationContext invocationContext) throws Exception {
-        return faultToleranceUtil.execute(invocationContext, requestContext);
+    FaultToleranceType(String key) {
+        this.key = key;
     }
 
+    public String getKey() {
+        return key;
+    }
+
+    public static FaultToleranceType toEnum(String str) {
+
+        if (str.equals(ASYNCHRONOUS.getKey()))
+            return ASYNCHRONOUS;
+        else if (str.equals(BULKHEAD.getKey()))
+            return BULKHEAD;
+        else if (str.equals(TIMEOUT.getKey()))
+            return TIMEOUT;
+        else if (str.equals(FALLBACK.getKey()))
+            return FALLBACK;
+        else if (str.equals(CIRCUIT_BREAKER.getKey()))
+            return CIRCUIT_BREAKER;
+        else
+            return null;
+    }
 }

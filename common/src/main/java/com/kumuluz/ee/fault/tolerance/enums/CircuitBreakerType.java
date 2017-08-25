@@ -18,22 +18,22 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.models;
+package com.kumuluz.ee.fault.tolerance.enums;
 
 /**
  * Enum type for circuit breaker configuration type.
  *
  * @author Luka Šarc
  */
-public enum FaultToleranceConfigurationType {
+public enum CircuitBreakerType {
 
-    COMMAND("commands"),
-    THREAD_POOL("thread-pools"),
-    GROUP("groups");
+    COMMAND("command"),
+    THREAD_POOL("thread-pool"),
+    GROUP("group");
 
     private final String configKey;
 
-    FaultToleranceConfigurationType(String configKey) {
+    CircuitBreakerType(String configKey) {
         this.configKey = configKey;
     }
 
@@ -41,7 +41,7 @@ public enum FaultToleranceConfigurationType {
         return configKey;
     }
 
-    public static FaultToleranceConfigurationType toEnum(String str) {
+    public static CircuitBreakerType toEnum(String str) {
 
         if (str.equals(COMMAND.getConfigKey()))
             return COMMAND;

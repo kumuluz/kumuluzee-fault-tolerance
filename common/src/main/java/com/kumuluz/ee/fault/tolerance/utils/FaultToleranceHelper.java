@@ -20,7 +20,7 @@
  */
 package com.kumuluz.ee.fault.tolerance.utils;
 
-import com.kumuluz.ee.fault.tolerance.models.FaultToleranceConfigurationType;
+import com.kumuluz.ee.fault.tolerance.enums.CircuitBreakerType;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -35,12 +35,12 @@ public class FaultToleranceHelper {
 
     private static final Logger log = Logger.getLogger(FaultToleranceHelper.class.getName());
 
-    public static String getBaseConfigPath(FaultToleranceConfigurationType type, String typeKey, String executorName) {
+    public static String getBaseConfigPath(CircuitBreakerType type, String typeKey, String executorName) {
 
-        String basePath = FaultToleranceUtil.SERVICE_NAME;
+        String basePath = FaultToleranceUtilImpl.SERVICE_NAME;
         String typePath = type.getConfigKey() + "." + typeKey;
 
-        if (executorName != null && type == FaultToleranceConfigurationType.COMMAND) {
+        if (executorName != null && type == CircuitBreakerType.COMMAND) {
             typePath += "." + executorName;
         } else if (executorName != null) {
             basePath += "." + executorName;

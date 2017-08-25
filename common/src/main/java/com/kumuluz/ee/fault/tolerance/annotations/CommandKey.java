@@ -37,8 +37,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Inherited
 @InterceptorBinding
 @Retention(RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
-public @interface CircuitBreakerKey {
+@Target({ElementType.METHOD})
+public @interface CommandKey {
 
     @Nonbinding String value() default "";
 

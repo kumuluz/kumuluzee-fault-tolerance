@@ -20,8 +20,9 @@
  */
 package com.kumuluz.ee.fault.tolerance.models;
 
+import com.kumuluz.ee.fault.tolerance.enums.CircuitBreakerType;
 import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceHelper;
-import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceUtil;
+import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceUtilImpl;
 
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -36,21 +37,21 @@ import java.util.List;
 public class ConfigurationProperty {
 
     private final String executorName;
-    private final FaultToleranceConfigurationType type;
+    private final CircuitBreakerType type;
     private final String typeKey;
     private final String property;
 
     private Object value;
     private ChronoUnit unit;
 
-    public ConfigurationProperty(FaultToleranceConfigurationType type, String typeKey, String property) {
+    public ConfigurationProperty(CircuitBreakerType type, String typeKey, String property) {
         this.executorName = null;
         this.type = type;
         this.typeKey = typeKey;
         this.property = property;
     }
 
-    public ConfigurationProperty(String executorName, FaultToleranceConfigurationType type, String typeKey, String property) {
+    public ConfigurationProperty(String executorName, CircuitBreakerType type, String typeKey, String property) {
         this.executorName = executorName;
         this.type = type;
         this.typeKey = typeKey;
@@ -61,7 +62,7 @@ public class ConfigurationProperty {
         return executorName;
     }
 
-    public FaultToleranceConfigurationType getType() {
+    public CircuitBreakerType getType() {
         return type;
     }
 
@@ -97,21 +98,21 @@ public class ConfigurationProperty {
 
         List<String> keyPathSplit = new ArrayList<String>(Arrays.asList(keyPath.split("\\.")));
 
-        if (keyPathSplit.size() > 3 && keyPathSplit.get(0).equals(FaultToleranceUtil.SERVICE_NAME)) {
+        if (keyPathSplit.size() > 3 && keyPathSplit.get(0).equals(FaultToleranceUtilImpl.SERVICE_NAME)) {
 
             String executorName = null;
-            FaultToleranceConfigurationType type = FaultToleranceConfigurationType.toEnum(keyPathSplit.get(1));
+            CircuitBreakerType type = CircuitBreakerType.toEnum(keyPathSplit.get(1));
             String typeKey = keyPathSplit.get(2);
             String propertyKey = keyPathSplit.get(3);
 
             if (keyPathSplit.size() > 4) {
                 propertyKey = keyPathSplit.get(4);
 
-                if (type == FaultToleranceConfigurationType.COMMAND) {
+                if (type == CircuitBreakerType.COMMAND) {
                     executorName = keyPathSplit.get(3);
                 } else {
                     executorName = keyPathSplit.get(1);
-                    type = FaultToleranceConfigurationType.toEnum(keyPathSplit.get(2));
+                    type = CircuitBreakerType.toEnum(keyPathSplit.get(2));
                     typeKey = keyPathSplit.get(3);
                 }
             }

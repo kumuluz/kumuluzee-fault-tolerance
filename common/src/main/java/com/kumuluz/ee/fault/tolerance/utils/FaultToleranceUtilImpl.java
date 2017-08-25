@@ -20,14 +20,14 @@
  */
 package com.kumuluz.ee.fault.tolerance.utils;
 
+import com.kumuluz.ee.configuration.ConfigurationListener;
+import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import com.kumuluz.ee.fault.tolerance.annotations.*;
 import com.kumuluz.ee.fault.tolerance.interfaces.FallbackHandler;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceExecutor;
-import com.kumuluz.ee.fault.tolerance.models.FaultToleranceConfigurationType;
+import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceUtil;
 import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
-import com.kumuluz.ee.configuration.ConfigurationListener;
-import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import org.jboss.weld.context.RequestContext;
 
 import javax.annotation.PostConstruct;
@@ -36,32 +36,32 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.interceptor.InvocationContext;
 import java.lang.reflect.Method;
-import java.time.Duration;
 import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * Util for executing method in circuit breaker and setting up configuration
+ * Util for setting up basic configuration and passing execution of intercepted method within
+ * fault tolerance executor
  *
  * @author Luka Šarc
  */
 @ApplicationScoped
-public class FaultToleranceUtil {
+public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
-    private static final Logger log = Logger.getLogger(FaultToleranceUtil.class.getName());
+    private static final Logger log = Logger.getLogger(FaultToleranceUtilImpl.class.getName());
 
     public static final String SERVICE_NAME = "fault-tolerance";
-    private static final int CONFIG_WATCH_QUEUE_UPDATE_LIMIT = 20;
+    private static final int CONFIG_WATCH_QUEUE_UPDATE_LIMIT = 50;
 
     private Boolean watchEnabled;
     private List<String> watchProperties;
 
     private Map<String, ExecutionMetadata> metadatasMap;
-    private Queue<ConfigurationProperty> updatePropertiesQueue;
     private Map<String, ConfigurationListener> configListenersMap;
+    private Queue<ConfigurationProperty> updatePropertiesQueue;
 
     @Inject
-    private FaultToleranceExecutor circuitBreakerExecutor;
+    private FaultToleranceExecutor executor;
 
     @PostConstruct
     public void init() {
@@ -95,28 +95,40 @@ public class FaultToleranceUtil {
         configListenersMap.values().forEach(configUtil::unsubscribe);
     }
 
+    /**
+     * Executes method intercepted by interceptor with executor
+     * @param invocationContext Invocation context provided by interceptor
+     * @param requestContext    Request context provided by interceptor
+     * @return                  Result of method execution
+     * @throws Exception
+     */
     public Object execute(InvocationContext invocationContext, RequestContext requestContext) throws Exception {
 
         ExecutionMetadata config = toExecutionMetadata(invocationContext);
 
         updateConfigurations();
 
-        return circuitBreakerExecutor.execute(invocationContext, requestContext, config);
+        return executor.execute(invocationContext, requestContext, config);
     }
 
+    /**
+     * Checks if watch is enabled for property
+     * @param property  ConfigurationProperty object to check watch for
+     * @return          True if watch is enabled, false otherwise
+     */
+    public boolean isWatchEnabled(ConfigurationProperty property) {
+        return watchEnabled != null && watchEnabled.booleanValue() &&
+                watchProperties.stream().anyMatch(p -> p.equals(property.getProperty()));
+    }
+
+    /**
+     * Initiates watch for property if watch is enabled and not already set
+     * @param property  ConfigurationProperty object to initiate watch for
+     */
     public void watch(ConfigurationProperty property) {
 
-        if (watchEnabled == null || !watchEnabled.booleanValue() ||
-                configListenersMap.containsKey(property.configurationPath()))
+        if (!isWatchEnabled(property) || configListenersMap.containsKey(property.configurationPath()))
             return;
-
-        if (watchProperties != null) {
-            boolean propertyMatch = watchProperties.stream()
-                    .anyMatch(p -> p.equals(property.getProperty()));
-
-            if (!propertyMatch)
-                return;
-        }
 
         ConfigurationListener listener = (String updatedKey, String updatedValue) -> {
 
@@ -158,6 +170,10 @@ public class FaultToleranceUtil {
         ConfigurationUtil.getInstance().subscribe(property.configurationPath(), listener);
     }
 
+    /**
+     * Removes watch for property
+     * @param property  ConfigurationProperty object to remove watch for
+     */
     public void removeWatch(ConfigurationProperty property) {
 
         String configPath = property.configurationPath();
@@ -168,16 +184,25 @@ public class FaultToleranceUtil {
         }
     }
 
+    /**
+     * Updates received updated configurations for watched configuration properties
+     */
     public void updateConfigurations() {
 
         int cnt = 0;
         while(updatePropertiesQueue.peek() != null && cnt < CONFIG_WATCH_QUEUE_UPDATE_LIMIT) {
             ConfigurationProperty prop = updatePropertiesQueue.poll();
-            circuitBreakerExecutor.setPropertyValue(prop);
+            executor.setPropertyValue(prop);
             cnt++;
         }
     }
 
+    /**
+     * Creates ExecutionMetadata object with execution info from invocation context or retreives it
+     * from map if exists already
+     * @param ic    InvocationContext associated with the execution
+     * @return      ExecutionMetadata object with execution info
+     */
     private ExecutionMetadata toExecutionMetadata(InvocationContext ic) {
 
         Method targetMethod = ic.getMethod();
@@ -187,8 +212,8 @@ public class FaultToleranceUtil {
         if (targetClassIsProxied(targetClass))
             targetClass = targetClass.getSuperclass();
 
-        String commandKey = getKey(targetMethod, targetClass);
-        String groupKey = getGroupKey(targetMethod, targetClass);
+        String commandKey = getCommandKey(targetMethod);
+        String groupKey = getGroupKey(targetClass, targetMethod);
         String key = groupKey + "." + commandKey;
 
         if (metadatasMap.containsKey(key))
@@ -202,132 +227,111 @@ public class FaultToleranceUtil {
         Fallback fallback = null;
         CircuitBreaker circuitBreaker = null;
 
+        // check for asynchronous annotation
         if (targetMethod.isAnnotationPresent(Asynchronous.class))
             asynchronous = targetMethod.getAnnotation(Asynchronous.class);
         else if (targetClass.isAnnotationPresent(Asynchronous.class))
             asynchronous = targetClass.getAnnotation(Asynchronous.class);
 
+        // check for bulkhead annotation
         if (targetMethod.isAnnotationPresent(Bulkhead.class))
             bulkhead = targetMethod.getAnnotation(Bulkhead.class);
         else if (targetClass.isAnnotationPresent(Bulkhead.class))
             bulkhead = targetClass.getAnnotation(Bulkhead.class);
 
+        // check for timeout annotation
         if (targetMethod.isAnnotationPresent(Timeout.class))
             timeout = targetMethod.getAnnotation(Timeout.class);
         else if (targetClass.isAnnotationPresent(Timeout.class))
             timeout = targetClass.getAnnotation(Timeout.class);
 
+        // checko for fallback annotation
         if (targetMethod.isAnnotationPresent(Fallback.class))
             fallback = targetMethod.getAnnotation(Fallback.class);
         else if (targetClass.isAnnotationPresent(Fallback.class))
             fallback = targetClass.getAnnotation(Fallback.class);
 
+        // check for circuit breaker annotation
         if (targetMethod.isAnnotationPresent(CircuitBreaker.class))
             circuitBreaker = targetMethod.getAnnotation(CircuitBreaker.class);
         else if (targetClass.isAnnotationPresent(CircuitBreaker.class))
             circuitBreaker = targetClass.getAnnotation(CircuitBreaker.class);
 
+        boolean isAsync = asynchronous != null;
+
+        if (isAsync) {
+            // TODO: Check if returns Future<T>
+        }
+
         Class<? extends FallbackHandler> fallbackHandlerClass = getFallbackHandlerClass(fallback, targetMethod);
         Method fallbackMethod = getFallbackMethod(fallback, targetClass, targetMethod);
-        Class<? extends Throwable>[] failOn = circuitBreaker.failOn();
 
-        ConfigurationUtil configurationUtil = ConfigurationUtil.getInstance();
+        ExecutionMetadata metadata = new ExecutionMetadata(targetClass, targetMethod, commandKey, groupKey);
 
-        ExecutionMetadata metadata = new ExecutionMetadata(targetClass, targetMethod, fallbackHandlerClass,
-                fallbackMethod, commandKey, groupKey, failOn);
+        metadata.setAsynchronous(isAsync);
+        metadata.setFallbackHandlerClass(fallbackHandlerClass);
+        metadata.setFallbackMethod(fallbackMethod);
 
-        // initialize parameters from annottaions
-        Duration timeoutDuration = Duration.of(timeout.value(), timeout.unit());
-        ConfigurationProperty timeoutProperty = new ConfigurationProperty(FaultToleranceConfigurationType.COMMAND,
-                commandKey, "timeout");
-        Optional<String> timeoutConfig = configurationUtil.get(timeoutProperty.configurationPath());
-
-        if (timeoutConfig.isPresent()) {
-            timeoutDuration = FaultToleranceHelper.parseDuration(timeoutConfig.get());
-            watch(timeoutProperty);
-        }
-
-        timeoutProperty.setValue(timeoutDuration);
-        circuitBreakerExecutor.setPropertyValue(timeoutProperty);
-
-        int rvThreshold = circuitBreaker.requestVolumeThreshold();
-        ConfigurationProperty rvThresholdProperty = new ConfigurationProperty(FaultToleranceConfigurationType.COMMAND,
-                commandKey, "request-volume-threshold");
-        Optional<Integer> rvThresholdConfig = configurationUtil.getInteger(rvThresholdProperty.configurationPath());
-
-        if (rvThresholdConfig.isPresent()) {
-            rvThreshold = rvThresholdConfig.get();
-            watch(rvThresholdProperty);
-        }
-
-        rvThresholdProperty.setValue(rvThreshold);
-        circuitBreakerExecutor.setPropertyValue(rvThresholdProperty);
-
-        double failureRatio = circuitBreaker.failureRatio();
-        ConfigurationProperty failureRatioProperty = new ConfigurationProperty(FaultToleranceConfigurationType.COMMAND,
-                commandKey, "failure-ratio");
-        Optional<Double> failureRatioConfig = configurationUtil.getDouble(failureRatioProperty.configurationPath());
-
-        if (failureRatioConfig.isPresent()) {
-            failureRatio = failureRatioConfig.get();
-            watch(failureRatioProperty);
-        }
-
-        failureRatioProperty.setValue(failureRatio);
-        circuitBreakerExecutor.setPropertyValue(failureRatioProperty);
-
-        Duration delay = Duration.of(circuitBreaker.delay(), circuitBreaker.delayUnit());
-        ConfigurationProperty delayProperty = new ConfigurationProperty(FaultToleranceConfigurationType.COMMAND,
-                commandKey, "delay");
-        Optional<String> delayConfig = configurationUtil.get(delayProperty.configurationPath());
-
-        if (delayConfig.isPresent()) {
-            delay = FaultToleranceHelper.parseDuration(delayConfig.get());
-            watch(delayProperty);
-        }
-
-        delayProperty.setValue(delay);
-        circuitBreakerExecutor.setPropertyValue(delayProperty);
-
+        metadata.setBulkhead(bulkhead);
+        metadata.setTimeout(timeout);
+        metadata.setCircuitBreaker(circuitBreaker);
 
         metadatasMap.put(key, metadata);
-
 
         return metadata;
     }
 
-    private String getGroupKey(Method targetMethod, Class<?> targetClass) {
+    /**
+     * Constructs command key. By default target method is used. If @CommandKey annotation is present,
+     * it's value is used instead.
+     * @param targetMethod  Execution target method
+     * @return              Command name
+     */
+    private String getCommandKey(Method targetMethod) {
 
-        CircuitBreakerGroupKey cbgk = null;
+        CommandKey annotKey = null;
 
-        if (targetClass.isAnnotationPresent(CircuitBreakerGroupKey.class))
-            cbgk = targetClass.getAnnotation(CircuitBreakerGroupKey.class);
+        if (targetMethod.isAnnotationPresent(CommandKey.class))
+            annotKey = targetMethod.getAnnotation(CommandKey.class);
 
-        if (targetMethod.isAnnotationPresent(CircuitBreakerGroupKey.class))
-            cbgk = targetMethod.getAnnotation(CircuitBreakerGroupKey.class);
-
-        if (cbgk != null && !cbgk.value().equals(""))
-            return cbgk.value();
-        else
-            return targetClass.getName();
-    }
-
-    private String getKey(Method targetMethod, Class<?> targetClass) {
-
-        CircuitBreakerKey cbk = null;
-
-        if (targetClass.isAnnotationPresent(CircuitBreakerKey.class))
-            cbk = targetClass.getAnnotation(CircuitBreakerKey.class);
-
-        if (targetMethod.isAnnotationPresent(CircuitBreakerKey.class))
-            cbk = targetMethod.getAnnotation(CircuitBreakerKey.class);
-
-        if (cbk != null && !cbk.value().equals(""))
-            return cbk.value();
+        if (annotKey != null && !annotKey.value().equals(""))
+            return annotKey.value();
         else
             return targetMethod.getName();
     }
 
+    /**
+     * Constructs group key. By default target class name is used. If @Bulkhead annotation is used on target
+     * method, then target method name is set as group key. In case of @GroupKey annotation, it's value is
+     * used as group key name instead of target class or method name.
+     * @param targetClass   Execution target class
+     * @param targetMethod  Execution target method
+     * @return              Group name
+     */
+    private String getGroupKey(Class<?> targetClass, Method targetMethod) {
+
+        boolean method = targetMethod.isAnnotationPresent(Bulkhead.class);
+        String key = method ? targetMethod.getName() : targetClass.getName();
+        GroupKey annotKey = null;
+
+        if (method && targetMethod.isAnnotationPresent(GroupKey.class))
+            annotKey = targetMethod.getAnnotation(GroupKey.class);
+        else if (!method && targetClass.isAnnotationPresent(GroupKey.class))
+            annotKey = targetClass.getAnnotation(GroupKey.class);
+
+        if (annotKey != null && !annotKey.value().equals(""))
+            key = annotKey.value();
+
+        return key;
+    }
+
+    /**
+     * Extracts fallback handler class if defined, checks if return type of handle method in FallbackHandler
+     * implementation matches target method return type
+     * @param fallback      Fallback annotation associated with target method
+     * @param targetMethod  Execution target method
+     * @return              FallbackHandler implementation's class
+     */
     private Class<? extends FallbackHandler> getFallbackHandlerClass(Fallback fallback, Method targetMethod) {
 
         if (fallback == null || Fallback.DEFAULT.class.isInstance(fallback.value()))
@@ -354,6 +358,14 @@ public class FaultToleranceUtil {
         return null;
     }
 
+    /**
+     * Finds fallback method if defined using reflection, checks if fallback method matches return type and
+     * parameter types with target method
+     * @param fallback      Fallback annotation associated with target method
+     * @param targetClass   Execution target class
+     * @param targetMethod  Execution target method
+     * @return              Fallback reflection Method object
+     */
     private Method getFallbackMethod(Fallback fallback, Class targetClass, Method targetMethod) {
 
         if (fallback == null || !Fallback.DEFAULT.class.isInstance(fallback.value()) ||
@@ -385,6 +397,11 @@ public class FaultToleranceUtil {
         return null;
     }
 
+    /**
+     * Check if target class is proxied due to CDI use
+     * @param targetClass
+     * @return true if target class is proxied, false otherwise
+     */
     private boolean targetClassIsProxied(Class targetClass) {
         return targetClass.getCanonicalName().contains("$Proxy");
     }

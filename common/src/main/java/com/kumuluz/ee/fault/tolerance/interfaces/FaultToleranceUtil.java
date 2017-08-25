@@ -18,39 +18,29 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.interceptors;
+package com.kumuluz.ee.fault.tolerance.interfaces;
 
-import com.kumuluz.ee.fault.tolerance.annotations.CircuitBreaker;
-import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceUtil;
+import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import org.jboss.weld.context.RequestContext;
-import org.jboss.weld.context.unbound.Unbound;
 
-import javax.annotation.Priority;
-import javax.inject.Inject;
-import javax.interceptor.AroundInvoke;
-import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 
 /**
- * Interceptor for handling fault tolerance execution.
+ * Util for setting up basic configuration and passing execution of intercepted method within
+ * fault tolerance executor
  *
  * @author Luka Šarc
  */
-@Interceptor
-@CircuitBreaker
-@Priority(Interceptor.Priority.PLATFORM_AFTER)
-public class FaultToleranceInterceptor {
+public interface FaultToleranceUtil {
 
-    @Inject
-    private FaultToleranceUtil faultToleranceUtil;
+    Object execute(InvocationContext invocationContext, RequestContext requestContext) throws Exception;
 
-    @Inject
-    @Unbound
-    private RequestContext requestContext;
+    boolean isWatchEnabled(ConfigurationProperty property);
 
-    @AroundInvoke
-    public Object executeFaultTolerance(InvocationContext invocationContext) throws Exception {
-        return faultToleranceUtil.execute(invocationContext, requestContext);
-    }
+    void watch(ConfigurationProperty property);
+
+    void removeWatch(ConfigurationProperty property);
+
+    void updateConfigurations();
 
 }
