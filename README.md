@@ -110,7 +110,7 @@ fault-tolerance:
     find-customers:
       timeout: 
         value: 2500ms
-      circuit-breaker
+      circuit-breaker:
         request-volume-threshold: 30
         failure-ratio: 0.3
         metrics:
