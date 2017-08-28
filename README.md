@@ -1,60 +1,253 @@
-# KumuluzEE Circuit Breaker
-[![Build Status](https://img.shields.io/travis/kumuluz/kumuluzee-circuit-breaker/master.svg?style=flat)](https://travis-ci.org/kumuluz/kumuluzee-circuit-breaker)
+# KumuluzEE Fault Tolerance
+[![Build Status](https://img.shields.io/travis/kumuluz/kumuluzee-fault-tolerance/master.svg?style=flat)](https://travis-ci.org/kumuluz/kumuluzee-fault-tolerance)
 
-> KumuluzEE Circuit Breaker extension for the Kumuluz EE microservice framework. 
+> KumuluzEE Fault Tolerance extension for the Kumuluz EE microservice framework. 
 
-KumuluzEE Circuit Breaker is a circuit breaker extension for the KumuluzEE microservice framework. It provides support 
-for fault tolerance and latency tolerance using the circuit breaker pattern. KumuluzEE Circuit Breaker supports basic 
-circuit breaker configuration using annotations. Additionaly, configuring circuit breakers via KumuluzEE Config is supported. 
+KumuluzEE Fault Tolerance is a fault tolerance extension for the KumuluzEE microservice framework. It provides support 
+for fault tolerance and latency tolerance with circuit breaker, bulkhead, timeout and fallback patterns. 
+KumuluzEE Fault Tolerance supports basic fault tolerance configuration using annotations. Additionaly, 
+configuring via KumuluzEE Config is supported. 
 
-KumuluzEE Circuit Breaker has been designed to support modularity with pluggable circuit breaker frameworks. Currently, 
-Hystrix is supported. Contributions for other circuit breaker providers are welcome.
+KumuluzEE Fault Tolerance has been designed to support modularity with pluggable fault tolerance frameworks. Currently, 
+Hystrix is supported. Contributions for other fault tolerance providers are welcome.
+
+KumuluzEE Fault Tolerance is developing towards 
+[MicroProfile Fault Tolerance specification](http://microprofile.io/project/eclipse/microprofile-fault-tolerance). 
+Currently, all defined annotations are kept within KumuluzEE Fault Tolerance packages. When MicroProfile Fault Tolerance 
+final version will be released and all defined features in KumuluzEE Fault Tolerance will be implemented, the official 
+MicroProfile Fault Tolerance API will be included.
 
 ## Usage
 
-You can add the KumuluzEE Circuit Breaker with Hystrix by adding the following dependency:
+You can add the KumuluzEE Fault Tolerance with Hystrix by adding the following dependency:
 ```xml
 <dependency>
-    <groupId>com.kumuluz.ee.circuit.breaker</groupId>
-    <artifactId>kumuluzee-circuit-breaker-hystrix</artifactId>
-    <version>1.0.0</version>
+    <groupId>com.kumuluz.ee.fault.tolerance</groupId>
+    <artifactId>kumuluzee-fault-tolerance-hystrix</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
-To enable circuit breaker using KumuluzEE Circuit Breaker, CDI class has to be annotated with `@EnableCircuitBreaker`.
-Each method that will be executed with circuit breaker has to be annotated with `@CircuitBreaker` annotation.
+To enable fault tolerance patterns using KumuluzEE Fault Tolerance, CDI class has to be annotated with annotations for
+desired fault tolerance pattern. Currently `@CircuitBreaker`, `@Bulkhead`, `@Timeout` and `@Fallback are supported.
+If annotation is added on class, the pattern will be applied on all methods within class.
 
-KumuluzEE Circuit Breaker will intercept the method execution and proceed the execution within the circuit breaker to track and monitor success, failures, timeouts, etc.
+KumuluzEE Fault Tolerance will intercept the method execution and proceed the execution within the fault tolerance to 
+track and monitor success, failures, timeouts, etc. Interceptor is currently only binded to `@CircuitBreaker` annotation. Support for fault tolerance patterns is currently 
+limited to usage with circuit breaker pattern. In future, we will add additional usage possibilities.
 
-### Circuit Breaker basic configuration
+### Fault Tolerance basic configuration
 
-KumuluzEE Circuit Breaker properties can be configured using annotations and/or KumuluzEE Config. `@CircuitBreaker` 
-annotation provides several parameters that can set basic circuit breaker behavior:
+All fault tolerance executions are executed as a commands withing groups. Each command and group is identified with key.
+By default, method name is used as a key for command and class name is used as a key for group. Default settings can
+be overriden with `@CommandKey` and `@GroupKey` annotations.
 
-- key: circuit breaker command key. Default value is method name.
-- fallbackMethod: name of the fallback method that will be executed in case of failure. Provided fallback method must be public. In addition, it must take same parameters and have the same return type as the method annotated for the circuit breaker execution.
-- skipFallbackOn: array of Throwable classes for which fallback execution will not occur in case of a failure. Exceptions defined in throws method clause will additionally be added to the array when the circuit breaker call will begin. By default, RuntimeException class is added to array.
-- group: command group key. Annotation `@CircuitBreakerGroup` can also set the group key on the method or class. If used on a method, it will override the group set by the `@CircuitBreaker` property. If not provided, the class name will be used as the command's group key.
-- timeout: time limit for the execution before the fallback is called. Default value is 1000.
-- timeoutUnit: time unit for the timeout setting. Default unit is milliseconds.
-- requestThreshold: minimum number of requests that will trip the circuit. Default value is 20.
-- failureThreshold: error percentage above which the circuit will trip open. Default value is 50.
-- openCircuitWait: amount of time the circuit breaker will reject all requests after tripping the circuit before allowing attempts again. Default value is 5000.
-- openCircuitWaitUnit: time unit for openCircuitWait setting. Default unit is milliseconds.
-- forceClosed: forces circuit to closed state. Default value is false.
-- forceOpen: forces circuit to open state. Default value is false.
+KumuluzEE Fault Tolerance properties can be configured using annotations and/or KumuluzEE Config.
 
-If any properties are set through the annotations, they cannot be overridden with any other type of configuration.
+`@CircuitBreaker`, `@Timeout` and `@Fallback` setting are binded to command. `@Bulkhead` is binded to groups. If 
+bulkhead pattern is used on single method, default group key will be set to `<class-name>-<method-name>`. It can
+be overriden with `@GroupKey` annotation. If bulkhead patter is applied on class, all methods will be executed within the
+same bulkhead group key and limitations defined within bulkhead pattern will be applied to all commands within the group.
 
-Example of using KumuluzEE Circuit Breaker:
+Example of using KumuluzEE Fault Tolerance circuit breaker pattern with bulkhead, timeout and fallback defined:
 
 ```java
 @RequestScoped
-@EnableCircuitBreaker
-@CircuitBreakerGroup("customers")
+@CircuitBreaker
+@Bulkhead
+@GroupKey("customers")
 public class CustomersBean {
 
-    @CircuitBreaker(key = "find-customers", fallbackMethod = "findCustomersFallback", skipFallbackOn = {})
+    @Timeout(value = 2, unit = ChronoUnit.SECONDS)
+    @CommandKey("find-customers")
+    public List<Customer> findCustomers(String query) {
+        // ...
+    }
+}
+``` 
+ 
+### KumuluzEE Configuration
+
+KumuluzEE Fault Tolerance can be configured via KumuluzEE Config. To learn more about KumuluzEE Config please visit 
+[KumuluzEE Config wiki page](https://github.com/kumuluz/kumuluzee/wiki/Configuration) and the 
+[KumuluzEE Config extension](https://github.com/kumuluz/kumuluzee-config).
+
+Fault tolerance command-specific properties are applied only to command under specified group and command key.
+They can be set using key format: 
+
+```
+fault-tolerance.<group-key>.<command-key>.<fault-tolerance-pattern>.<property-name-path>
+```
+
+Group-specific settings are applied to all commands within group except for bulkhead pattern which is applied to a
+group by design. Group-specific settings can be set using key format:
+
+```
+fault-tolerance.<group-key>.<fault-tolerance-pattern>.<property-name-path>
+```
+
+Global settings are also supported using the key format:
+
+```
+fault-tolerance.<fault-tolerance-pattern>.<property-name-path>
+```
+
+When multiple settings are present, the command-specific setting takes precedence over group-specific setting, which is
+followed by global setting.
+
+For time units, the desired time unit can be provided after the numeric value (i.e. 3s). Minutes [m], seconds [s], 
+milliseconds [ms] and nanoseconds [ns] are supported.
+
+Example of config.yml` for setting properties using KumuluzEE Config:
+
+```yml
+fault-tolerance:
+  circuit-breaker:
+    delay: 3s
+  customers:
+    bulkhead:
+      value: 5
+    find-customers:
+      timeout: 
+        value: 2500ms
+      circuit-breaker
+        request-volume-threshold: 30
+        failure-ratio: 0.3
+        metrics:
+          rolling-window:
+            size: 8s
+            buckets: 4
+```
+
+### Watching for property value change
+
+With KumuluzEE Config, usage of configuration servers is supported. Updating circuit breaker configuration properties 
+is an important feature in order to be able to adapt to different loads on services. KumuluzEE Fault Tolerance
+supports watching for property changes in configuration server by setting configuration 
+`fault-tolerance.config.watch-enabled` to true.
+
+By default, all properties that can be changed after initialization in fault tolerance framework can be watched.
+With libraries like Hystrix, which provide a lot of configuration parameters, it is recommended to limit watched properties. We recommend using watches only for those properties that might change and for which it makes sense to react on the change in runtime. 
+Specifying watched properties can be done by setting 
+`fault-tolerance.config.watch-properties` with comma separated key paths. Use name of fault tolerance pattern with property
+ key path.
+
+Example of config.yml for setting property value watching using KumuluzEE Config:
+
+```yml
+fault-tolerance:
+  config:
+    watch-enabled: true
+    watch-properties: timeout.value,circuit-breaker.failure-ratio
+```
+
+**NOTE**: When setting properties on multiple levels (global, group-specific, command-specific), only the applied key path
+at first execution for each command (or group in case of bulkhead pattern) will be watched.
+
+### Fault Tolerance patterns
+
+#### Circuit breaker pattern
+
+Circuit breaker pattern is applied with `@CircuitBreaker` annotation. If used on class, all methods will be executed with 
+circuit breaker pattern. 
+
+Common settings, available via annotation or KumuluzEE Config can be applied:
+
+- __delay__ - wait time circuit breaker will wait before executing next request when circuit is open (use with delayUnit 
+for specifing time unit when using annotation).
+- __requestVolumeThreshold (config:  request-volume-threshold)__ - number of minimum executions within rolling window 
+needed to trip the circuit.
+- __failureRatio (config: failure-ratio)__ - failure ratio that causes circuit to trip open.
+- __failOn__ - array of Throwable classes marking execution as failed (can only be set with annotation),
+
+Some additional Hystrix specific properties are available using the KumuluzEE Config settings:
+
+- __metrics.rolling-window.size__ - sets size of Hystrix metrics rolling window in time.
+- __metrics.rolling-window.buckets__ - sets number of rolling window buckets.
+- __metrics.rolling-percentile.enabled__ - enables Hystrix rolling percentile metrics.
+- __metrics.rolling-percentile.size__ - sets size of Hystrix metrics rolling percentile window in time.
+- __metrics.rolling-percentile.buckets__ - sets number of rolling percentile window buckets.
+- __metrics.rolling-percentile.bucket-size__ - sets maximum rolling percentile bucket size.
+- __metrics.health-interval__ - sets interval for calculating error percentage and other health metrics in Hystrix.
+- __interrupt.on-timeout__ - sets whether to interrupt the thread on timeout when using thread execution.
+- __interrupt.on-cancel__ - sets whether to interrupt the thread on cancelation when using thread execution.
+- __log.enabled__ - enables Hystrix request log.
+ 
+ #### Bulkhead pattern
+ 
+ Bulkhead pattern is applied with `@Bulkhead` annotation. Bulkhead pattern is binded to group and NOT to commands as other
+ patterns. If bulkhead pattern is applied on class, all methods will be executed within the same bulkhead group key 
+ and limitations defined within bulkhead pattern will be applied to all commands within the group.
+ 
+ By default, bulkhead pattern is semaphore executed. If used in combination with `@Asynchronous` annotation, thread
+ execution is applied. Semaphored bulkhead execution will automatically be applied when using circuit breaker pattern.
+ 
+ Common settings, available via annotation or KumuluzEE Config can be applied:
+  
+- __value (config: value)__ - sets number of concurrent parallel executions.
+- __waitingTaskQueue (config: waiting-task-queue)__ - sets queue size (only in thread execution).
+
+Some additional Hystrix specific properties for thread execution are available using the KumuluzEE Config settings:
+- __metrics.rolling-window.size__ - sets size of Hystrix metrics rolling window in time.
+- __metrics.rolling-window.buckets__ - sets number of rolling window buckets.
+- __keep-alive__ - sets minimum keep alive time of thread.
+  
+#### Timeout pattern
+
+Timeout pattern is applied with `@Timeout` annotation. If used on class, all methods will be executed with 
+timeout pattern. 
+
+Common settings, available via annotation or KumuluzEE Config can be applied:
+
+- __value (config: value)__ - timeout value (use with unit for specifing time unit when using annotation).
+
+#### Fallback pattern
+
+Fallback pattern is applied with `@Fallback` annotation. If used on class, all methods will be executed with 
+same defined fallback.
+ 
+Fallback can be defined only using the annotation. Two usage options are available:
+1. __Usage with class__ - set class implementing _FallbackHandler_. Method _handle_ must return same type as 
+intercepted method. Class must be a CDI. Example:
+
+```java
+@RequestScoped
+@GroupKey("customers")
+public class CustomersBean {
+
+    @CircuitBreaker
+    @Timeout(value = 2, unit = ChronoUnit.SECONDS)
+    @Fallback(FindCustomerFallback.class)
+    @CommandKey("find-customers")
+    public List<Customer> findCustomers(String query) {
+        // ...
+    }
+}
+```
+
+```java
+@RequestScoped
+public class FindCustomerFallback implements FallbackHandler<List<Customer>> {
+    
+    @Override
+    public List<Customer> handle(ExecutionContext executionContext) {
+        return new ArrayList<>();
+    }
+}
+``` 
+
+2. __Usage with fallbackMethod__ - provide fallback method name. Method must exists in same class as intercepted method.
+Return type and parameter types must be the same as in intercepted method. Example: 
+
+```java
+@RequestScoped
+@GroupKey("customers")
+public class CustomersBean {
+
+    @CircuitBreaker
+    @Timeout(value = 2, unit = ChronoUnit.SECONDS)
+    @Fallback(fallbackMethod = "findCustomersFallback")
+    @CommandKey("find-customers")
     public List<Customer> findCustomers(String query) {
         // ...
     }
@@ -64,102 +257,18 @@ public class CustomersBean {
     }
 
 }
-```
- 
-### KumuluzEE Configuration
-
-KumuluzEE Circuit Breaker can be configured via KumuluzEE Config. To learn more about KumuluzEE Config please visit [KumuluzEE Config wiki page](https://github.com/kumuluz/kumuluzee/wiki/Configuration) and the [KumuluzEE Config extension]( https://github.com/kumuluz/kumuluzee-config).
-
-Basic circuit breaker properties (except for the command key) can be set using the key format: 
-`circuit-breaker.commands.<command-key>.<property-name>`. 
-For time units, the desired time unit can be provided after the numeric value (i.e. 3s). Minutes [m], seconds [s], milliseconds [ms] and nanoseconds [ns] are supported.
-
-Example of config.yml for setting the basic properties using KumuluzEE Config:
-
-```yml
-circuit-breaker:
-  commands:
-    get:
-      timeout: 2500ms
-      request-threshold: 30
-      failure-threshold: 20
-      open-circuit-wait: 3s
-      force-closed: false
-      force-open: false
-      group: put
-```
-
-### Configuring circuit breaker framework command specific properties
-
-KumuluzEE Circuit Breaker supports configuring circuit breaker framework specific properties. If the property for the command is not already among basic circuit breaker properties, it can be set using the key format: 
-`circuit-breaker.commands.<command-key>.<framework-name>.<property-name>`.
-
-Example of config.yml for setting Hystrix specific command properties using KumuluzEE Config:
-
-```yml
-circuit-breaker:
-  commands:
-    get:
-      timeout: 2500ms
-      #...
-      hystrix:
-        execution-strategy: semaphore
-        semaphore-execution-max-concurrent-requests: 5
-        semaphore-fallback-max-concurrent-requests: 2
-        timeout-enabled: true
-        metrics-rolling-statistical-window: 5s
-        metrics-rolling-statistical-window-buckets: 5
-```
-
-### Watching for property value change
-
-With KumuluzEE Config, usage of configuration servers is supported. Updating circuit breaker configuration properties is an important feature in order to be able to adapt to different loads on services. KumuluzEE Circuit Breaker supports watching for property changes in configuration server by setting configuration `kumuluzee.circuit-breaker.watch-enabled` to true.
-
-By default, all properties that can be changed after initialization in circuit breaker framework can be watched.
-With libraries like Hystrix, which provide a lot of configuration parameters, it is recommended to limit watched properties. We recommend using watches only for those properties that might change and for which it makes sense to react on the change in runtime. 
-Specifying watched properties can be done by setting 
-`kumuluzee.circuit-breaker.watch-properties` with comma separated property names that can be watched. 
-
-Example of config.yml for setting property value watching using KumuluzEE Config:
-
-```yml
-kumuluzee:
-  circuit-breaker:
-    watch-enabled: true
-    watch-properties: force-closed,request-threshold,failure-threshold
-```
-
-**NOTE**: When setting property value using annotations, watches will not be triggered, since any 
-configuration made by KumuluzEE Config cannot override values set by the annotations.
-
-### Framework specific configurations
-
-With certain circuit breaker frameworks (i.e. Hystrix), there are also configurations for other property types beside the commands available. Such important property types are the thread pools. These properties can also be configured in KumuluzEE Circuit Breaker using KumuluzEE Config extension by using configuration key format `circuit-breaker.<framework-name>.<configuration-type>.<configuration-type-name>.<property-name>`.
-
-Example of config.yml for setting Hystrix thread pool properties using KumuluzEE Config:
-
-```yml
-circuit-breaker:
-  hystrix:
-    thread-pools:
-      default:
-        threads-core: 6
-        threads-max: 8
-        threads-diverge-from-core: true
-```
-
-Hystrix uses group key as the default configuration for setting command's thread pool key. The same goes for KumuluzEE Circuit Breaker extension for Hystrix. In order to set the command thread pool key different than the command group key, set the framework command specific property with the `thread-pool` key.  
+``` 
 
 ## Changelog
 
-Recent changes can be viewed on Github on the [Releases Page](https://github.com/kumuluz/kumuluzee-circuit-breaker/releases)
+Recent changes can be viewed on Github on the [Releases Page](https://github.com/kumuluz/kumuluzee-fault-tolerance/releases)
 
 ## Contribute
 
-See the [contributing docs](https://github.com/kumuluz/kumuluzee-circuit-breaker/blob/master/CONTRIBUTING.md)
+See the [contributing docs](https://github.com/kumuluz/kumuluzee-fault-tolerance/blob/master/CONTRIBUTING.md)
 
 When submitting an issue, please follow the 
-[guidelines](https://github.com/kumuluz/kumuluzee-circuit-breaker/blob/master/CONTRIBUTING.md#bugs).
+[guidelines](https://github.com/kumuluz/kumuluzee-fault-tolerance/blob/master/CONTRIBUTING.md#bugs).
 
 When submitting a bugfix, write a test that exposes the bug and fails before applying your fix. Submit the test 
 alongside the fix.
