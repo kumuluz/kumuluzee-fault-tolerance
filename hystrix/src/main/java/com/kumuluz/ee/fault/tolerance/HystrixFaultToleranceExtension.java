@@ -32,8 +32,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Luka Šarc
  */
-//@EeExtensionDef(name =  "hystrix", group = EeExtensionGroup.FAULT_TOLERANCE)
-@EeExtensionDef(name =  "hystrix", type = EeExtensionType.FAULT_TOLERANCE)
+@EeExtensionDef(name =  "hystrix", group = EeExtensionGroup.FAULT_TOLERANCE)
 @EeComponentDependency(EeComponentType.CDI)
 public class HystrixFaultToleranceExtension implements Extension {
 
