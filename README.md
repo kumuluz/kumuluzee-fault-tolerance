@@ -29,7 +29,7 @@ You can add the KumuluzEE Fault Tolerance with Hystrix by adding the following d
 ```
 
 To enable fault tolerance patterns using KumuluzEE Fault Tolerance, CDI class has to be annotated with annotations for
-desired fault tolerance pattern. Currently `@CircuitBreaker`, `@Bulkhead`, `@Timeout` and `@Fallback are supported.
+desired fault tolerance pattern. Currently `@CircuitBreaker`, `@Bulkhead`, `@Timeout` and `@Fallback` are supported.
 If annotation is added on class, the pattern will be applied on all methods within class.
 
 KumuluzEE Fault Tolerance will intercept the method execution and proceed the execution within the fault tolerance to 
