@@ -339,7 +339,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
      */
     private Class<? extends FallbackHandler> getFallbackHandlerClass(Fallback fallback, Method targetMethod) {
 
-        if (fallback == null || Fallback.DEFAULT.class.isInstance(fallback.value()))
+        if (fallback == null || Fallback.DEFAULT.class.equals(fallback.value()))
             return null;
 
         Class<? extends FallbackHandler<?>> fallbackClass = fallback.value();
@@ -373,7 +373,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
      */
     private Method getFallbackMethod(Fallback fallback, Class targetClass, Method targetMethod) {
 
-        if (fallback == null || !Fallback.DEFAULT.class.isInstance(fallback.value()) ||
+        if (fallback == null || !Fallback.DEFAULT.class.equals(fallback.value()) ||
                 fallback.fallbackMethod().equals(""))
             return null;
 

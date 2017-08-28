@@ -126,9 +126,8 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
 
                 return response;
             } else if (metadata.getFallbackMethod() != null) {
-                return metadata.getFallbackMethod()
-                        .invoke(invocationContext.getTarget(),
-                                invocationContext.getParameters());
+                return metadata.getFallbackMethod().invoke(invocationContext.getTarget(),
+                        invocationContext.getParameters());
             } else {
                 log.severe("Fallback should not be invoked if both fallback mechanisms (" +
                         "fallbackHandler and fallbackMethod) are unedfined.");

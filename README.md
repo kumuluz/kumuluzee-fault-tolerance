@@ -47,7 +47,7 @@ KumuluzEE Fault Tolerance properties can be configured using annotations and/or 
 
 `@CircuitBreaker`, `@Timeout` and `@Fallback` setting are binded to command. `@Bulkhead` is binded to groups. If 
 bulkhead pattern is used on single method, default group key will be set to `<class-name>-<method-name>`. It can
-be overriden with `@GroupKey` annotation. If bulkhead patter is applied on class, all methods will be executed within the
+be overriden with `@GroupKey` annotation. If bulkhead pattern is applied on class, all methods will be executed within the
 same bulkhead group key and limitations defined within bulkhead pattern will be applied to all commands within the group.
 
 Example of using KumuluzEE Fault Tolerance circuit breaker pattern with bulkhead, timeout and fallback defined:
