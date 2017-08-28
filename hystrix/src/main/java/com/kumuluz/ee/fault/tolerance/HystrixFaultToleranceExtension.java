@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * KumuluzEE framework extension for Hystrix based circuit breaker
+ * KumuluzEE framework extension for Hystrix based fault tolerance
  *
  * @author Luka Šarc
  */
@@ -41,11 +41,11 @@ public class HystrixFaultToleranceExtension implements Extension {
 
     @Override
     public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
-        log.info("Initialising circuit breaker implemented by Hystrix.");
+        log.info("Initialising fault tolerance implemented by Hystrix.");
     }
 
     @Override
     public void load() {
-        log.info("Initialised circuit breaker implemented by Hystrix.");
+        log.info("Initialised fault tolerance implemented by Hystrix.");
     }
 }

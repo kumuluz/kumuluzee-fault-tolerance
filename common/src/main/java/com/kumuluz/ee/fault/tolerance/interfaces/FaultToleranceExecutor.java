@@ -27,8 +27,8 @@ import org.jboss.weld.context.RequestContext;
 import javax.interceptor.InvocationContext;
 
 /**
- * Interface for implementing circuit breaker executor for specific
- * circuit breaker library.
+ * Interface for implementing fault tolerance executor for specific
+ * fault tolerance library.
  *
  * @author Luka Šarc
  */

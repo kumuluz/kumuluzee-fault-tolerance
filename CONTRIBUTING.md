@@ -1,6 +1,6 @@
-# Contributing to KumuluzEE Circuit Breaker
+# Contributing to KumuluzEE Fault Tolerance
 
-♥ [KumuluzEE Circuit Breaker](https://github.com/kumuluz/kumuluzee-circuit-breaker) and want to get involved?
+♥ [KumuluzEE Fault Tolerance](https://github.com/kumuluz/kumuluzee-fault-tolerance) and want to get involved?
 Thanks! There are plenty of ways you can help!
 
 ## Bugs
@@ -43,7 +43,7 @@ Example:
 > causing the bug, and potential solutions (and your opinions on their
 > merits).
 
-**[File a bug report](https://github.com/kumuluz/kumuluzee-circuit-breaker/issues/)**
+**[File a bug report](https://github.com/kumuluz/kumuluzee-fault-tolerance/issues/)**
 
 
 ## Pull requests
@@ -65,11 +65,11 @@ project:
 
    ```bash
    # Clones your fork of the repo into the current directory in terminal
-   git clone https://github.com/<your-username>/kumuluzee-circuit-breaker.git
+   git clone https://github.com/<your-username>/kumuluzee-fault-tolerance.git
    # Navigate to the newly cloned directory
-   cd kumuluzee-circuit-breaker
+   cd kumuluzee-fault-tolerance
    # Assigns the original repo to a remote called "upstream"
-   git remote add upstream https://github.com/kumuluz/kumuluzee-circuit-breaker.git
+   git remote add upstream https://github.com/kumuluz/kumuluzee-fault-tolerance.git
    ```
 
 2. If you cloned a while ago, get the latest changes from upstream:

@@ -21,7 +21,7 @@
 package com.kumuluz.ee.fault.tolerance.enums;
 
 /**
- * Enum type for Hystrix circuit breaker configuration type.
+ * Enum type for Hystrix configuration type.
  *
  * @author Luka Šarc
  */

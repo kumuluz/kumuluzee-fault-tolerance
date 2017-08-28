@@ -27,7 +27,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.logging.Logger;
 
 /**
- * Helper class for circuit breakers.
+ * Helper class for fault tolerance.
  *
  * @author Luka Šarc
  */

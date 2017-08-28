@@ -40,7 +40,7 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
- * Hystrix implementation of circuit breaker executor
+ * Hystrix implementation of fault tolerance executor
  *
  * @author Luka Šarc
  */

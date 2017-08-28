@@ -36,7 +36,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Logger;
 
 /**
- * Hystrix generic command for wrapping method execution in circuit breaker
+ * Hystrix generic command for wrapping method execution in fault tolerance
  *
  * @author Luka Šarc
  */

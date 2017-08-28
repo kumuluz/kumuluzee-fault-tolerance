@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Annotation setting circuit breaker group key
+ * Annotation setting group key
  *
  * @author Luka Šarc
  */
