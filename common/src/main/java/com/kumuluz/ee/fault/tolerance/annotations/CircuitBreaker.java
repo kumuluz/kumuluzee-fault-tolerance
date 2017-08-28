@@ -44,14 +44,12 @@ public @interface CircuitBreaker {
 
     @Nonbinding Class<? extends Throwable>[] failOn() default {Throwable.class};
 
-    @Nonbinding int delay() default -1;
+    @Nonbinding int delay() default 5000;
 
     @Nonbinding ChronoUnit delayUnit() default ChronoUnit.MILLIS;
 
     @Nonbinding int requestVolumeThreshold() default 20;
 
     @Nonbinding double failureRatio() default .50;
-
-    @Nonbinding int successThreshold() default 1;
 
 }

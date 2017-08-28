@@ -20,7 +20,7 @@
  */
 package com.kumuluz.ee.fault.tolerance.utils;
 
-import com.kumuluz.ee.fault.tolerance.enums.CircuitBreakerType;
+import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -35,18 +35,16 @@ public class FaultToleranceHelper {
 
     private static final Logger log = Logger.getLogger(FaultToleranceHelper.class.getName());
 
-    public static String getBaseConfigPath(CircuitBreakerType type, String typeKey, String executorName) {
+    public static String getBaseConfigPath(String commandKey, String groupKey, FaultToleranceType type) {
+        return String.format("%s.%s.%s.%s", FaultToleranceUtilImpl.SERVICE_NAME, groupKey, commandKey, type.getKey());
+    }
 
-        String basePath = FaultToleranceUtilImpl.SERVICE_NAME;
-        String typePath = type.getConfigKey() + "." + typeKey;
+    public static String getBaseConfigPath(String groupKey, FaultToleranceType type) {
+        return String.format("%s.%s.%s", FaultToleranceUtilImpl.SERVICE_NAME, groupKey, type.getKey());
+    }
 
-        if (executorName != null && type == CircuitBreakerType.COMMAND) {
-            typePath += "." + executorName;
-        } else if (executorName != null) {
-            basePath += "." + executorName;
-        }
-
-        return basePath + "." + typePath;
+    public static String getBaseConfigPath(FaultToleranceType type) {
+        return String.format("%s.%s", FaultToleranceUtilImpl.SERVICE_NAME, type.getKey());
     }
 
     public static Duration parseDuration(String str) {
@@ -94,12 +92,26 @@ public class FaultToleranceHelper {
         }
     }
 
+    public static double parseDouble(String str) {
+
+        try {
+            return Double.parseDouble(str);
+        } catch (NumberFormatException e) {
+            log.warning("Parsing of value '" + str + "' to double failed.");
+            return 0;
+        }
+    }
+
     public static boolean parseBoolean(String str) {
         return str.toLowerCase().equals("true");
     }
 
     public static boolean isInt(String str) {
         return str.matches("^(-?)\\d+$");
+    }
+
+    public static boolean isDouble(String str) {
+        return str.matches("^(-?)\\d+\\.\\d+$");
     }
 
     public static boolean isBoolean(String str) {

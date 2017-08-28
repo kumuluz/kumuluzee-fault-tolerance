@@ -21,19 +21,18 @@
 package com.kumuluz.ee.fault.tolerance.enums;
 
 /**
- * Enum type for circuit breaker configuration type.
+ * Enum type for Hystrix circuit breaker configuration type.
  *
  * @author Luka Šarc
  */
-public enum CircuitBreakerType {
+public enum HystrixConfigurationType {
 
     COMMAND("command"),
-    THREAD_POOL("thread-pool"),
-    GROUP("group");
+    THREAD_POOL("threadpool");
 
     private final String configKey;
 
-    CircuitBreakerType(String configKey) {
+    HystrixConfigurationType(String configKey) {
         this.configKey = configKey;
     }
 
@@ -41,14 +40,12 @@ public enum CircuitBreakerType {
         return configKey;
     }
 
-    public static CircuitBreakerType toEnum(String str) {
+    public static HystrixConfigurationType toEnum(String str) {
 
         if (str.equals(COMMAND.getConfigKey()))
             return COMMAND;
         else if (str.equals(THREAD_POOL.getConfigKey()))
             return THREAD_POOL;
-        else if (str.equals(GROUP.getConfigKey()))
-            return GROUP;
         else
             return null;
     }

@@ -29,6 +29,8 @@ import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
 import org.jboss.weld.context.RequestContext;
 
+import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.spi.CDI;
 import javax.interceptor.InvocationContext;
 import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Logger;
@@ -45,6 +47,8 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
     private final InvocationContext invocationContext;
     private final RequestContext requestContext;
     private final ExecutionMetadata metadata;
+
+    private boolean threadExecution = false;
 
     public HystrixGenericCommand(HystrixCommand.Setter setter, InvocationContext invocationContext, RequestContext requestContext, ExecutionMetadata metadata) {
 
@@ -64,21 +68,24 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
                 .getProperty("hystrix.command." + metadata.getCommandKey() + ".execution.isolation.strategy");
         Object result;
 
-        boolean threadExecution = property == null || property == HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
+        boolean requestContextActivated = false;
+        threadExecution = property == null || property == HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
 
         try {
-            if (threadExecution && !requestContext.isActive())
+            if (threadExecution && !requestContext.isActive()) {
                 requestContext.activate();
+                requestContextActivated = true;
+            }
 
             result = invocationContext.proceed();
-
-            if (threadExecution && requestContext.isActive())
-                requestContext.deactivate();
         } catch (Throwable e) {
             if (isFallbackInvokeable(e))
                 throw e;
 
             throw new HystrixBadRequestException(e.getMessage(), e);
+        } finally {
+            if (requestContextActivated && requestContext.isActive())
+                requestContext.deactivate();
         }
 
         return result;
@@ -96,15 +103,28 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
                     executionException.getClass().getName());
         }
 
+        boolean requestContextActivated = false;
+
         try {
             if (metadata.getFallbackHandlerClass() != null) {
-                FallbackHandler fallbackHandler = metadata.getFallbackHandlerClass().newInstance();
+
+                if (threadExecution && !requestContext.isActive()) {
+                    requestContext.activate();
+                    requestContextActivated = true;
+                }
+
+                Instance<? extends FallbackHandler> fallbackCdi = CDI.current().select(metadata.getFallbackHandlerClass());
+                FallbackHandler fallbackHandler = fallbackCdi.get();
 
                 DefaultFallbackExecutionContext executionContext = new DefaultFallbackExecutionContext();
                 executionContext.setMethod(metadata.getMethod());
                 executionContext.setParameters(invocationContext.getParameters());
 
-                return fallbackHandler.handle(executionContext);
+                Object response = fallbackHandler.handle(executionContext);
+
+                CDI.current().destroy(fallbackCdi);
+
+                return response;
             } else if (metadata.getFallbackMethod() != null) {
                 return metadata.getFallbackMethod()
                         .invoke(invocationContext.getTarget(),
@@ -112,13 +132,16 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
             } else {
                 log.severe("Fallback should not be invoked if both fallback mechanisms (" +
                         "fallbackHandler and fallbackMethod) are unedfined.");
+
+                // TODO: Throw appropriate exception!
             }
         } catch (IllegalAccessException|InvocationTargetException e) {
             log.severe("Exception occured while trying to invoke fallback method for key '" +
                     metadata.getCommandKey() + "': " + e.getClass().getName());
             e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
+        } finally {
+            if (requestContextActivated && requestContext.isActive())
+                requestContext.deactivate();
         }
 
         return null;
@@ -126,7 +149,7 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
 
     private boolean isFallbackInvokeable(Throwable e) {
 
-        Class[] failOn = metadata.getFailOn();
+        Class<? extends Throwable>[] failOn = metadata.getCircuitBreaker().failOn();
 
         if (failOn != null) {
             for (Class<? extends Throwable> fo : failOn) {

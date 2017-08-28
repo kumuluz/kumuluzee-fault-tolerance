@@ -1,0 +1,180 @@
+package com.kumuluz.ee.fault.tolerance.configurations;
+
+import com.kumuluz.ee.fault.tolerance.annotations.Bulkhead;
+import com.kumuluz.ee.fault.tolerance.annotations.CircuitBreaker;
+import com.kumuluz.ee.fault.tolerance.annotations.Timeout;
+import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
+import com.kumuluz.ee.fault.tolerance.enums.HystrixConfigurationType;
+import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
+import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
+
+import java.time.Duration;
+import java.util.Optional;
+
+/**
+ * Created by luka on 26/08/2017.
+ */
+public class CommandConfigurationUtil extends AbstractHystrixConfigurationUtil {
+
+    public CommandConfigurationUtil(HystrixFaultToleranceConfigurationManager configManager) {
+        super(configManager);
+    }
+
+    public void initialize(ExecutionMetadata metadata) {
+
+        String commandKey = metadata.getCommandKey();
+        String groupKey = metadata.getGroupKey();
+        FaultToleranceType type;
+
+        type = FaultToleranceType.ASYNCHRONOUS;
+
+        if (!metadata.isAsynchronous()) {
+            intializeProperty(commandKey, groupKey, type, "value", false);
+        }
+
+        CircuitBreaker cb = metadata.getCircuitBreaker();
+        type = FaultToleranceType.CIRCUIT_BREAKER;
+
+        if (cb != null) {
+            intializeProperty(commandKey, groupKey, type, "request-volume-threshold", cb.requestVolumeThreshold());
+            intializeProperty(commandKey, groupKey, type, "failure-ratio", cb.failureRatio());
+
+            Duration delay = Duration.of(cb.delay(), cb.delayUnit());
+            intializeProperty(commandKey, groupKey, type, "delay", delay);
+
+            intializeProperty(commandKey, groupKey, type, "metrics.rolling-window.size", null);
+            intializeProperty(commandKey, groupKey, type, "metrics.rolling-window.buckets", null);
+            intializeProperty(commandKey, groupKey, type, "metrics.rolling-percentile.enabled", null);
+            intializeProperty(commandKey, groupKey, type, "metrics.rolling-percentile.size", null);
+            intializeProperty(commandKey, groupKey, type, "metrics.rolling-percentile.buckets", null);
+            intializeProperty(commandKey, groupKey, type, "metrics.rolling-percentile.bucket-size", null);
+            intializeProperty(commandKey, groupKey, type, "metrics.health-interval", null);
+
+            if (metadata.isAsynchronous()) {
+                intializeProperty(commandKey, groupKey, type, "interrupt.on-timeout", null);
+                intializeProperty(commandKey, groupKey, type, "interrupt.on-cancel", null);
+            }
+        } else {
+            intializeProperty(commandKey, groupKey, type, "enabled", false);
+        }
+
+        type = FaultToleranceType.FALLBACK;
+        boolean isFallback = metadata.getFallbackHandlerClass() != null || metadata.getFallbackMethod() != null;
+
+        if (!isFallback)
+            intializeProperty(commandKey, groupKey, type, "enabled", false);
+        else if (cb != null)
+            intializeProperty(commandKey, groupKey, type, "max-requests", null);
+
+        Bulkhead bulkhead = metadata.getBulkhead();
+        type = FaultToleranceType.BULKHEAD;
+
+        if (bulkhead != null && !metadata.isAsynchronous()) {
+            intializeProperty(commandKey, groupKey, type, "bulkhead.value", bulkhead.value());
+        }
+
+        Timeout timeout = metadata.getTimeout();
+        type = FaultToleranceType.TIMEOUT;
+
+        if (timeout != null) {
+            Duration value = Duration.of(timeout.value(), timeout.unit());
+            intializeProperty(commandKey, groupKey, type, "value", value);
+
+            intializeProperty(commandKey, groupKey, type, "enabled", true);
+        } else {
+            intializeProperty(commandKey, groupKey, type, "enabled", false);
+        }
+    }
+
+    public void updateProperty(ConfigurationProperty property, Object value) {
+        setHystrixProperty(property, HystrixConfigurationType.COMMAND, property.getCommandKey(),
+                value, true);
+    }
+
+    protected void initializeWatchedProperty(ConfigurationProperty property, ConfigurationProperty appliedProperty, Object defaultValue) {
+
+        boolean isChangeable = isHystrixPropertyChangeable(property);
+
+        setHystrixProperty(property, HystrixConfigurationType.COMMAND, property.getCommandKey(),
+                appliedProperty.getValue(), isChangeable);
+
+        if (isChangeable) {
+            configManager.intializeWatch(HystrixConfigurationType.COMMAND, appliedProperty,
+                    property);
+        }
+    }
+
+    protected String toHystrixPropertyPath(ConfigurationProperty property, boolean changeable) {
+
+        switch (property.typeConfigurationPath()) {
+            case "asynchronous.value":
+                return changeable ? null : "execution.isolation.strategy";
+            case "bulkhead.value":
+                return "execution.isolation.semaphore.maxConcurrentRequests";
+            case "circuit-breaker.enabled":
+                return changeable ? null : "circuitBreaker.enabled";
+            case "circuit-breaker.request-volume-threshold":
+                return "circuitBreaker.requestVolumeThreshold";
+            case "circuit-breaker.failure-ratio":
+                return "circuitBreaker.errorThresholdPercentage";
+            case "circuit-breaker.delay":
+                return "circuitBreaker.sleepWindowInMilliseconds";
+            case "circuit-breaker.metrics.rolling-window.size":
+                return changeable ? null : "metrics.rollingStats.timeInMilliseconds";
+            case "circuit-breaker.metrics.rolling-window.buckets":
+                return changeable ? null : "metrics.rollingStats.numBuckets";
+            case "circuit-breaker.metrics.rolling-percentile.enabled":
+                return changeable ? null : "metrics.rollingPercentile.enabled";
+            case "circuit-breaker.metrics.rolling-percentile.size":
+                return changeable ? null : "metrics.rollingPercentile.timeInMilliseconds";
+            case "circuit-breaker.metrics.rolling-percentile.buckets":
+                return changeable ? null : "metrics.rollingPercentile.numBuckets";
+            case "circuit-breaker.metrics.rolling-percentile.bucket-size":
+                return changeable ? null : "metrics.rollingPercentile.bucketSize";
+            case "circuit-breaker.metrics.health-interval":
+                return "metrics.healthSnapshot.intervalInMilliseconds";
+            case "circuit-breaker.interrupt.on-timeout":
+                return "execution.isolation.thread.interruptOnTimeout";
+            case "circuit-breaker.interrupt.on-cancel":
+                return "execution.isolation.thread.interruptOnCancel";
+            case "circuit-breaker.log.enabled":
+                return "requestLog.enabled";
+            case "timeout.enabled":
+                return changeable ? null : "execution.timeout.enabled";
+            case "timeout.value":
+                return "execution.isolation.thread.timeoutInMilliseconds";
+            case "fallback.enabled":
+                return changeable ? null : "fallback.enabled";
+            case "fallback.max-requests":
+                return "fallback.isolation.semaphore.maxConcurrentRequests";
+            default:
+                return null;
+        }
+    }
+
+    private void intializeProperty(String commandKey, String groupKey, FaultToleranceType type, String propertyPath, Object defaultValue) {
+
+        boolean watchEnabled = false;
+        boolean configValueFound = false;
+        ConfigurationProperty property = new ConfigurationProperty(commandKey, groupKey, type, propertyPath);
+        Optional<ConfigurationProperty> appliedProperty = configManager.findKumuluzConfig(commandKey, groupKey, type, propertyPath);
+
+        if (appliedProperty.isPresent()) {
+            Optional<Object> configValue = configManager.getKumuluzConfig(appliedProperty.get());
+
+            if (configValue.isPresent()) {
+                appliedProperty.get().setValue(configValue.get());
+
+                configValueFound = true;
+                watchEnabled = configManager.isWatchEnabled(appliedProperty.get());
+            }
+        }
+
+        if (watchEnabled) {
+            initializeWatchedProperty(property, appliedProperty.get(), defaultValue);
+        } else if (defaultValue != null || configValueFound) {
+            setHystrixProperty(property, HystrixConfigurationType.COMMAND, commandKey,
+                    configValueFound ? appliedProperty.get().getValue() : defaultValue);
+        }
+    }
+}

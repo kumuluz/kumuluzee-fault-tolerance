@@ -72,14 +72,14 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
         ConfigurationUtil configUtil = ConfigurationUtil.getInstance();
 
-        Optional<Boolean> watchEnabledOptional = configUtil.getBoolean("kumuluzee." + SERVICE_NAME + ".watch-enabled");
+        Optional<Boolean> watchEnabledOptional = configUtil.getBoolean(SERVICE_NAME + ".config.watch-enabled");
         if (watchEnabledOptional.isPresent())
             watchEnabled = watchEnabledOptional.get();
         else
             watchEnabled = null;
 
         if (watchEnabled == null || watchEnabled.booleanValue()) {
-            Optional<String> watchPropertiesOptional = configUtil.get("kumuluzee." + SERVICE_NAME + ".watch-properties");
+            Optional<String> watchPropertiesOptional = configUtil.get(SERVICE_NAME + ".config.watch-properties");
 
             if (watchPropertiesOptional.isPresent()) {
                 watchProperties = Arrays.asList(watchPropertiesOptional.get().split(","));
@@ -117,8 +117,10 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
      * @return          True if watch is enabled, false otherwise
      */
     public boolean isWatchEnabled(ConfigurationProperty property) {
+
+        String configPath = property.configurationPath();
         return watchEnabled != null && watchEnabled.booleanValue() &&
-                watchProperties.stream().anyMatch(p -> p.equals(property.getProperty()));
+                watchProperties.stream().anyMatch(p -> configPath.endsWith(p));
     }
 
     /**
@@ -143,6 +145,9 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
                     if (FaultToleranceHelper.isInt(updatedValue)) {
                         updatedProperty.setValue(FaultToleranceHelper.parseInt(updatedValue));
+                        valueParsed = true;
+                    } else if (FaultToleranceHelper.isDouble(updatedValue)) {
+                        updatedProperty.setValue(FaultToleranceHelper.parseDouble(updatedValue));
                         valueParsed = true;
                     } else if (FaultToleranceHelper.isBoolean(updatedValue)) {
                         updatedProperty.setValue(FaultToleranceHelper.parseBoolean(updatedValue));
@@ -301,9 +306,9 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
     }
 
     /**
-     * Constructs group key. By default target class name is used. If @Bulkhead annotation is used on target
-     * method, then target method name is set as group key. In case of @GroupKey annotation, it's value is
-     * used as group key name instead of target class or method name.
+     * Constructs group key. By default target class simple name is used. If @Bulkhead annotation is used on
+     * target method, then target method name is set as group key. In case of @GroupKey annotation, it's value
+     * is used as group key name instead of target class or method name.
      * @param targetClass   Execution target class
      * @param targetMethod  Execution target method
      * @return              Group name
@@ -311,7 +316,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
     private String getGroupKey(Class<?> targetClass, Method targetMethod) {
 
         boolean method = targetMethod.isAnnotationPresent(Bulkhead.class);
-        String key = method ? targetMethod.getName() : targetClass.getName();
+        String key = targetClass.getSimpleName() + (method ? "-" + targetMethod.getName() : "");
         GroupKey annotKey = null;
 
         if (method && targetMethod.isAnnotationPresent(GroupKey.class))

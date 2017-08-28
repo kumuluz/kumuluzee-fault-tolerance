@@ -20,11 +20,12 @@
  */
 package com.kumuluz.ee.fault.tolerance.models;
 
-import com.kumuluz.ee.fault.tolerance.enums.CircuitBreakerType;
+import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
+import com.kumuluz.ee.fault.tolerance.exceptions.FaultToleranceConfigException;
+import com.kumuluz.ee.fault.tolerance.exceptions.FaultToleranceException;
 import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceHelper;
 import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceUtilImpl;
 
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,42 +37,64 @@ import java.util.List;
  */
 public class ConfigurationProperty {
 
-    private final String executorName;
-    private final CircuitBreakerType type;
-    private final String typeKey;
-    private final String property;
+    private final String commandKey;
+    private final String groupKey;
+    private final FaultToleranceType type;
+    private final String propertyPath;
+    private final boolean global;
+    private final boolean groupSpecific;
 
     private Object value;
-    private ChronoUnit unit;
 
-    public ConfigurationProperty(CircuitBreakerType type, String typeKey, String property) {
-        this.executorName = null;
+    public ConfigurationProperty(FaultToleranceType type, String propertyPath) {
+        this.groupKey = null;
+        this.commandKey = null;
         this.type = type;
-        this.typeKey = typeKey;
-        this.property = property;
+        this.propertyPath = propertyPath;
+        global = true;
+        groupSpecific = false;
     }
 
-    public ConfigurationProperty(String executorName, CircuitBreakerType type, String typeKey, String property) {
-        this.executorName = executorName;
+    public ConfigurationProperty(String groupKey, FaultToleranceType type, String propertyPath) {
+        this.groupKey = groupKey;
+        this.commandKey = null;
         this.type = type;
-        this.typeKey = typeKey;
-        this.property = property;
+        this.propertyPath = propertyPath;
+        global = false;
+        groupSpecific = true;
     }
 
-    public String getExecutorName() {
-        return executorName;
+    public ConfigurationProperty(String commandKey, String groupKey, FaultToleranceType type, String propertyPath) {
+        this.commandKey = commandKey;
+        this.groupKey = groupKey;
+        this.type = type;
+        this.propertyPath = propertyPath;
+        global = false;
+        groupSpecific = false;
     }
 
-    public CircuitBreakerType getType() {
+    public String getCommandKey() {
+        return commandKey;
+    }
+
+    public String getGroupKey() {
+        return groupKey;
+    }
+
+    public FaultToleranceType getType() {
         return type;
     }
 
-    public String getTypeKey() {
-        return typeKey;
+    public String getPropertyPath() {
+        return propertyPath;
     }
 
-    public String getProperty() {
-        return property;
+    public boolean isGlobal() {
+        return global;
+    }
+
+    public boolean isGroupSpecific() {
+        return groupSpecific;
     }
 
     public Object getValue() {
@@ -82,45 +105,71 @@ public class ConfigurationProperty {
         this.value = value;
     }
 
-    public ChronoUnit getUnit() {
-        return unit;
-    }
-
-    public void setUnit(ChronoUnit unit) {
-        this.unit = unit;
+    public String typeConfigurationPath() {
+        return String.format("%s.%s", type.getKey(), propertyPath);
     }
 
     public String configurationPath() {
-        return FaultToleranceHelper.getBaseConfigPath(type, typeKey, executorName) + "." + property;
+        if (!global && !groupSpecific)
+            return FaultToleranceHelper.getBaseConfigPath(commandKey, groupKey, type) + "." + propertyPath;
+        else if (!global && groupSpecific)
+            return FaultToleranceHelper.getBaseConfigPath(groupKey, type) + "." + propertyPath;
+        else if (global && !groupSpecific)
+            return FaultToleranceHelper.getBaseConfigPath(type) + "." + propertyPath;
+        else
+            return propertyPath;
     }
 
-    public static ConfigurationProperty create(String keyPath) {
+    public static ConfigurationProperty create(String keyPath) throws FaultToleranceException {
 
         List<String> keyPathSplit = new ArrayList<String>(Arrays.asList(keyPath.split("\\.")));
 
-        if (keyPathSplit.size() > 3 && keyPathSplit.get(0).equals(FaultToleranceUtilImpl.SERVICE_NAME)) {
+        FaultToleranceType type = null;
+        String groupKey = null;
+        String commandKey = null;
+        List<String> propertyPathList = new ArrayList<>();
 
-            String executorName = null;
-            CircuitBreakerType type = CircuitBreakerType.toEnum(keyPathSplit.get(1));
-            String typeKey = keyPathSplit.get(2);
-            String propertyKey = keyPathSplit.get(3);
+        int idx = 0;
 
-            if (keyPathSplit.size() > 4) {
-                propertyKey = keyPathSplit.get(4);
+        if (keyPathSplit.size() == 0)
+            throw new FaultToleranceConfigException("Configuration key '" + keyPath + "' split length is 0.");
 
-                if (type == CircuitBreakerType.COMMAND) {
-                    executorName = keyPathSplit.get(3);
-                } else {
-                    executorName = keyPathSplit.get(1);
-                    type = CircuitBreakerType.toEnum(keyPathSplit.get(2));
-                    typeKey = keyPathSplit.get(3);
+        if (!keyPathSplit.get(idx++).equals(FaultToleranceUtilImpl.SERVICE_NAME))
+            throw new FaultToleranceConfigException("Configuration first key on path '" + keyPath +
+                    "' does not match service '" + FaultToleranceUtilImpl.SERVICE_NAME + "'.");
+
+        for (int i = 1; i < keyPathSplit.size(); i++) {
+            String key = keyPathSplit.get(idx++);
+
+            if (type == null) {
+                type = FaultToleranceType.toEnum(key);
+
+                if (type == null) {
+                    switch (i) {
+                        case 1:
+                            groupKey = key;
+                            break;
+                        case 2:
+                            commandKey = key;
+                            break;
+                        default:
+                            throw new FaultToleranceConfigException("Unidentified key at index " + i +
+                                    " of keypath '" + keyPath + "'.");
+                    }
                 }
+            } else {
+                propertyPathList.add(key);
             }
-
-            return new ConfigurationProperty(executorName, type, typeKey, propertyKey);
         }
 
-        return null;
+        String propertyPath = String.join(".", propertyPathList);
+
+        if (groupKey == null && commandKey == null)
+            return new ConfigurationProperty(type, propertyPath);
+        else if (commandKey == null)
+            return new ConfigurationProperty(groupKey, type, propertyPath);
+        else
+            return new ConfigurationProperty(commandKey, groupKey, type, propertyPath);
     }
 
 }
