@@ -40,6 +40,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({ElementType.METHOD})
 public @interface CommandKey {
 
+    /**
+     * Key value overriding default command key
+     */
     @Nonbinding String value() default "";
 
 }

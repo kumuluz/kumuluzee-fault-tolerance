@@ -51,8 +51,14 @@ public @interface Fallback {
         }
     }
 
+    /**
+     * Fallback handler class
+     */
     @Nonbinding Class<? extends FallbackHandler<?>> value() default DEFAULT.class;
 
+    /**
+     * Fallback method name
+     */
     @Nonbinding String fallbackMethod() default "";
 
 }

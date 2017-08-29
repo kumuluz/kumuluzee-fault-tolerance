@@ -42,8 +42,14 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({ElementType.METHOD, ElementType.TYPE})
 public @interface Timeout {
 
+    /**
+     * Timeout value
+     */
     @Nonbinding long value() default 1000;
 
+    /**
+     * Unit for timeout value member
+     */
     @Nonbinding ChronoUnit unit() default ChronoUnit.MILLIS;
 
 }

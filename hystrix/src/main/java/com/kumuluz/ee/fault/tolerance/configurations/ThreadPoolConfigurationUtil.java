@@ -60,24 +60,45 @@ public class ThreadPoolConfigurationUtil extends AbstractHystrixConfigurationUti
 
         switch (property.typeConfigurationPath()) {
             case "bulkhead.value":
-                if (!(defaultValue instanceof Integer) && !(appliedProperty.getValue() instanceof Integer))
-                    throw new FaultToleranceConfigException();
+                if (!(defaultValue instanceof Integer) || !(appliedProperty.getValue() instanceof Integer)) {
+                    throw new FaultToleranceConfigException("One of provided values for watched bulkhead " +
+                            "is not of type Integer: " + defaultValue + ", " + appliedProperty.getValue());
+                }
 
-                Integer staticValue = (Integer) defaultValue;
-                Integer dynamicValue = (Integer) appliedProperty.getValue();
+                Integer bulkheadStaticValue = (Integer) defaultValue;
+                Integer bulkheadDynamicalue = (Integer) appliedProperty.getValue();
 
-                if (staticValue > dynamicValue)
-                    dynamicValue = staticValue;
+                if (bulkheadStaticValue > bulkheadDynamicalue)
+                    bulkheadDynamicalue = bulkheadStaticValue;
 
-                setHystrixProperty(property, HystrixConfigurationType.THREAD_POOL, property.getGroupKey(), staticValue);
+                ConfigurationProperty allowDivergedSizesProperty = new ConfigurationProperty(property.getGroupKey(),
+                        FaultToleranceType.BULKHEAD, "value-change-enabled");
+
+                setHystrixProperty(allowDivergedSizesProperty, HystrixConfigurationType.THREAD_POOL, property.getGroupKey(),
+                        true);
                 setHystrixProperty(property, HystrixConfigurationType.THREAD_POOL, property.getGroupKey(),
-                        dynamicValue, true);
+                        bulkheadStaticValue);
+                setHystrixProperty(property, HystrixConfigurationType.THREAD_POOL, property.getGroupKey(),
+                        bulkheadDynamicalue, true);
 
                 break;
             case "bulkhead.waiting-task-queue":
-                setHystrixProperty(property, HystrixConfigurationType.THREAD_POOL, property.getGroupKey(), -1);
+                if (!(defaultValue instanceof Integer) || !(appliedProperty.getValue() instanceof Integer)) {
+                    throw new FaultToleranceConfigException("One of provided values for watched bulkhead " +
+                            "waiting task queue is not of type Integer: " + defaultValue + ", " +
+                            appliedProperty.getValue());
+                }
+
+                Integer queueStaticValue = (Integer) defaultValue;
+                Integer queueDynamicValue = (Integer) appliedProperty.getValue();
+
+                if (queueStaticValue < queueDynamicValue)
+                    queueDynamicValue = queueStaticValue;
+
                 setHystrixProperty(property, HystrixConfigurationType.THREAD_POOL, property.getGroupKey(),
-                        appliedProperty.getValue(), true);
+                        queueStaticValue);
+                setHystrixProperty(property, HystrixConfigurationType.THREAD_POOL, property.getGroupKey(),
+                        queueDynamicValue, true);
 
                 break;
             default:

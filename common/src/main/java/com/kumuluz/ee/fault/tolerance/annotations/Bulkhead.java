@@ -41,7 +41,13 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({ElementType.METHOD, ElementType.TYPE})
 public @interface Bulkhead {
 
+    /**
+     * Number of concurrent executions
+     */
     @Nonbinding int value() default 10;
 
+    /**
+     * Queue size in case of thread execution
+     */
     @Nonbinding int waitingTaskQueue() default 10;
 }

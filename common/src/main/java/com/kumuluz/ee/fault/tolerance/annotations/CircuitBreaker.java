@@ -42,14 +42,31 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({ElementType.METHOD, ElementType.TYPE})
 public @interface CircuitBreaker {
 
+    /**
+     * Throwable class to fail execution on
+     */
     @Nonbinding Class<? extends Throwable>[] failOn() default {Throwable.class};
 
+    /**
+     * Delay circuit breaker waits when tripped open before
+     * goint to half-open state
+     */
     @Nonbinding int delay() default 5000;
 
+    /**
+     * Delay unit for dely member
+     */
     @Nonbinding ChronoUnit delayUnit() default ChronoUnit.MILLIS;
 
+    /**
+     * Minimum requests in rolling window before the circuit
+     * can trip open
+     */
     @Nonbinding int requestVolumeThreshold() default 20;
 
+    /**
+     * Failure ratio to trip the circuit open
+     */
     @Nonbinding double failureRatio() default .50;
 
 }

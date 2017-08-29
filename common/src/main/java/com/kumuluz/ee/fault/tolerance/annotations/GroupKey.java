@@ -40,6 +40,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface GroupKey {
 
+    /**
+     * Key value overriding default group key
+     */
     @Nonbinding String value() default "";
 
 }
