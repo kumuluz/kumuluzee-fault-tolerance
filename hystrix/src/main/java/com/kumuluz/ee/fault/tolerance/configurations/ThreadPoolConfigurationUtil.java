@@ -27,6 +27,7 @@ import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * Hystrix thread pool configuration util
@@ -35,6 +36,8 @@ import java.util.Optional;
  */
 public class ThreadPoolConfigurationUtil extends AbstractHystrixConfigurationUtil {
 
+    private static final Logger log = Logger.getLogger(ThreadPoolConfigurationUtil.class.getName());
+
     public ThreadPoolConfigurationUtil(HystrixFaultToleranceConfigurationManager configManager) {
         super(configManager);
     }
@@ -42,6 +45,9 @@ public class ThreadPoolConfigurationUtil extends AbstractHystrixConfigurationUti
     public void initialize(ExecutionMetadata metadata) {
 
         String key = metadata.getGroupKey();
+
+        log.info("Initializing thread bulkhead pattern for group '" + key + "'.");
+
         intializeProperty(key, FaultToleranceType.BULKHEAD, "value", metadata.getBulkhead().value());
         intializeProperty(key, FaultToleranceType.BULKHEAD, "waiting-task-queue", metadata.getBulkhead().waitingTaskQueue());
         intializeProperty(key, FaultToleranceType.BULKHEAD, "metrics.rolling-window.size", null);

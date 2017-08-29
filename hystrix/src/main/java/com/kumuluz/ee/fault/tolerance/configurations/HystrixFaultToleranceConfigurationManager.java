@@ -33,6 +33,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Duration;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Configuration manager for setting Hystrix settings from KumuluzEE Fault Tolerance and
@@ -42,6 +43,8 @@ import java.util.*;
  */
 @ApplicationScoped
 public class HystrixFaultToleranceConfigurationManager {
+
+    private static final Logger log = Logger.getLogger(HystrixFaultToleranceConfigurationManager.class.getName());
 
     private ConfigurationUtil kumuluzConfig;
     private AbstractConfiguration hystrixConfig;
@@ -147,6 +150,9 @@ public class HystrixFaultToleranceConfigurationManager {
 
     public Optional<ConfigurationProperty> findKumuluzConfig(String commandKey, String groupKey, FaultToleranceType type, String propertyPath) {
 
+        log.finest("Searhing configuration for '" + commandKey + "', '" + groupKey + "', '" + type.getKey() +
+                "', '" + propertyPath + "'.");
+
         ConfigurationProperty resultProperty = null;
         Optional<String> value = null;
 
@@ -154,25 +160,36 @@ public class HystrixFaultToleranceConfigurationManager {
             resultProperty = new ConfigurationProperty(commandKey, groupKey, type, propertyPath);
             value = kumuluzConfig.get(resultProperty.configurationPath());
 
-            if (value.isPresent())
+            if (value.isPresent()) {
+                log.finest("Found configuration at path '" + resultProperty.configurationPath() + "'.");
+
                 return Optional.of(resultProperty);
+            }
         }
 
         if (commandKey == null && groupKey != null || resultProperty != null) {
             resultProperty = new ConfigurationProperty(groupKey, type, propertyPath);
             value = kumuluzConfig.get(resultProperty.configurationPath());
 
-            if (value.isPresent())
+            if (value.isPresent()) {
+                log.finest("Found configuration at path '" + resultProperty.configurationPath() + "'.");
+
                 return Optional.of(resultProperty);
+            }
         }
 
         if (commandKey == null && groupKey == null || resultProperty != null) {
             resultProperty = new ConfigurationProperty(type, propertyPath);
             value = kumuluzConfig.get(resultProperty.configurationPath());
 
-            if (value.isPresent())
+            if (value.isPresent()) {
+                log.finest("Found configuration at path '" + resultProperty.configurationPath() + "'.");
+
                 return Optional.of(resultProperty);
+            }
         }
+
+        log.finest("No configuration was found.");
 
         return Optional.empty();
     }
@@ -193,11 +210,17 @@ public class HystrixFaultToleranceConfigurationManager {
             List<ConfigurationProperty> properties = map.get(configPath);
 
             if (!properties.stream().anyMatch(p -> p.configurationPath().equals(newPropertyKeyPath))) {
+                log.finest("Adding key path '" + newPropertyKeyPath + "' to key '" + configPath + "' in map.");
+
                 properties.add(destProperty);
             }
-        } else{
+        } else {
+            log.info("Initializing config watch for key path '" + configPath + "'.");
+
             List<ConfigurationProperty> properties = new ArrayList<>();
             properties.add(destProperty);
+
+            log.finest("Adding key path '" + newPropertyKeyPath + "' to key '" + configPath + "' in map.");
 
             map.put(configPath, properties);
 
@@ -208,6 +231,8 @@ public class HystrixFaultToleranceConfigurationManager {
     public void updateProperty(ConfigurationProperty property) {
 
         String configPath = property.configurationPath();
+
+        log.info("Received update for key path '" + configPath + "'.");
 
         List<ConfigurationProperty> toUpdate;
         AbstractHystrixConfigurationUtil hystrixConfigurationUtil;
@@ -223,6 +248,8 @@ public class HystrixFaultToleranceConfigurationManager {
         }
 
         toUpdate.stream().forEach(p -> {
+            log.info("Updating configuration key '" + configPath + "' with value '" + property.getValue() + "'.");
+
             hystrixConfigurationUtil.updateProperty(p, property.getValue());
         });
     }

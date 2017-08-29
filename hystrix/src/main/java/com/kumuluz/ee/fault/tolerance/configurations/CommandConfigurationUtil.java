@@ -30,6 +30,7 @@ import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * Hystrix command configuration util
@@ -37,6 +38,8 @@ import java.util.Optional;
  * @author Luka Šarc
  */
 public class CommandConfigurationUtil extends AbstractHystrixConfigurationUtil {
+
+    private static final Logger log = Logger.getLogger(CommandConfigurationUtil.class.getName());
 
     public CommandConfigurationUtil(HystrixFaultToleranceConfigurationManager configManager) {
         super(configManager);
@@ -58,6 +61,8 @@ public class CommandConfigurationUtil extends AbstractHystrixConfigurationUtil {
         type = FaultToleranceType.CIRCUIT_BREAKER;
 
         if (cb != null) {
+            log.info("Initializing circuit breaker pattern for command '" + commandKey + "'.");
+
             intializeProperty(commandKey, groupKey, type, "request-volume-threshold", cb.requestVolumeThreshold());
             intializeProperty(commandKey, groupKey, type, "failure-ratio", cb.failureRatio());
 
@@ -83,15 +88,20 @@ public class CommandConfigurationUtil extends AbstractHystrixConfigurationUtil {
         type = FaultToleranceType.FALLBACK;
         boolean isFallback = metadata.getFallbackHandlerClass() != null || metadata.getFallbackMethod() != null;
 
-        if (!isFallback)
+        if (!isFallback) {
             intializeProperty(commandKey, groupKey, type, "enabled", false);
-        else if (cb != null)
+        } else if (cb != null) {
+            log.info("Initializing fallback pattern for command '" + commandKey + "'");
+
             intializeProperty(commandKey, groupKey, type, "max-requests", null);
+        }
 
         Bulkhead bulkhead = metadata.getBulkhead();
         type = FaultToleranceType.BULKHEAD;
 
         if (bulkhead != null && !metadata.isAsynchronous()) {
+            log.info("Initializing semaphored bulkhead pattern for command '" + commandKey + "'.");
+
             intializeProperty(commandKey, groupKey, type, "bulkhead.value", bulkhead.value());
         }
 
@@ -99,6 +109,8 @@ public class CommandConfigurationUtil extends AbstractHystrixConfigurationUtil {
         type = FaultToleranceType.TIMEOUT;
 
         if (timeout != null) {
+            log.info("Initializing timeout pattern for command '" + commandKey + "'.");
+
             Duration value = Duration.of(timeout.value(), timeout.unit());
             intializeProperty(commandKey, groupKey, type, "value", value);
 

@@ -26,6 +26,7 @@ import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 import com.netflix.hystrix.HystrixCommandProperties;
 
 import java.time.Duration;
+import java.util.logging.Logger;
 
 /**
  * Abstract Hystrix configuration util
@@ -33,6 +34,8 @@ import java.time.Duration;
  * @author Luka Šarc
  */
 public abstract class AbstractHystrixConfigurationUtil {
+
+    private static final Logger log = Logger.getLogger(AbstractHystrixConfigurationUtil.class.getName());
 
     protected HystrixFaultToleranceConfigurationManager configManager;
 
@@ -56,6 +59,8 @@ public abstract class AbstractHystrixConfigurationUtil {
 
         String hystrixProperyPath = toHystrixPropertyPath(property, changeable);
         Object hystrixValue = convertToHystrixValue(property, value);
+
+        log.finest("Setting Hystrix propery '" + hystrixProperyPath + "' to value '" + hystrixValue + "'.");
 
         if (hystrixProperyPath != null)
             configManager.setHystrixConfig(type, key, hystrixProperyPath, hystrixValue);
