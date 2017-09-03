@@ -21,14 +21,16 @@
 package com.kumuluz.ee.fault.tolerance;
 
 import com.kumuluz.ee.fault.tolerance.commands.HystrixGenericCommand;
-import com.kumuluz.ee.fault.tolerance.configurations.CommandConfigurationUtil;
-import com.kumuluz.ee.fault.tolerance.configurations.HystrixFaultToleranceConfigurationManager;
-import com.kumuluz.ee.fault.tolerance.configurations.ThreadPoolConfigurationUtil;
+import com.kumuluz.ee.fault.tolerance.configurations.*;
+import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceExecutor;
 import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceUtilImpl;
-import com.netflix.hystrix.*;
+import com.netflix.hystrix.HystrixCommand;
+import com.netflix.hystrix.HystrixCommandGroupKey;
+import com.netflix.hystrix.HystrixCommandKey;
+import com.netflix.hystrix.HystrixThreadPoolKey;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import org.jboss.weld.context.RequestContext;
@@ -61,6 +63,9 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
     @Inject
     private HystrixFaultToleranceConfigurationManager configManager;
 
+    @Inject
+    private RetryConfigurationManager retryManager;
+
     @Override
     public String getName() {
         return NAME;
@@ -89,7 +94,11 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         log.finest("Received kumuluzee configuration property '" + property.configurationPath() +
                 "' with value '" + property.getValue() + "'.");
 
-        configManager.updateProperty(property);
+        if (property.getType() == FaultToleranceType.RETRY) {
+            retryManager.updateProperty(property);
+        } else {
+            configManager.updateProperty(property);
+        }
     }
 
     @Override
@@ -131,8 +140,11 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
 
         HystrixCommandKey commandKey = HystrixCommandKey.Factory.asKey(key);
 
-        CommandConfigurationUtil ccUtil = new CommandConfigurationUtil(configManager);
+        CommandHystrixConfigurationUtil ccUtil = new CommandHystrixConfigurationUtil(configManager);
         ccUtil.initialize(metadata);
+
+        if (metadata.getRetry() != null)
+            retryManager.initializeRetry(metadata);
 
         hystrixCommandKeys.put(key, commandKey);
 
@@ -160,7 +172,7 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
             return null;
 
         if (metadata.getBulkhead() != null) {
-            ThreadPoolConfigurationUtil tpcUtil = new ThreadPoolConfigurationUtil(configManager);
+            ThreadPoolHystrixConfigurationUtil tpcUtil = new ThreadPoolHystrixConfigurationUtil(configManager);
             tpcUtil.initialize(metadata);
         }
 
@@ -169,13 +181,5 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         hystrixThreadPoolKeys.put(key, threadPoolKey);
 
         return threadPoolKey;
-    }
-
-    private void setHystrixProperty(String key, Object value) {
-        com.netflix.config.ConfigurationManager.getConfigInstance().setProperty(key, value);
-    }
-
-    private Object getHystrixProperty(String key) {
-        return com.netflix.config.ConfigurationManager.getConfigInstance().getProperty(key);
     }
 }

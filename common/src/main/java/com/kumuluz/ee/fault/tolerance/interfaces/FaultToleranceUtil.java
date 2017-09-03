@@ -20,10 +20,12 @@
  */
 package com.kumuluz.ee.fault.tolerance.interfaces;
 
+import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
 import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import org.jboss.weld.context.RequestContext;
 
 import javax.interceptor.InvocationContext;
+import java.util.Optional;
 
 /**
  * Util for setting up basic configuration and passing execution of intercepted method within
@@ -42,5 +44,11 @@ public interface FaultToleranceUtil {
     void removeWatch(ConfigurationProperty property);
 
     void updateConfigurations();
+
+    Optional<ConfigurationProperty> findConfig(FaultToleranceType type, String propertyPath);
+
+    Optional<ConfigurationProperty> findConfig(String groupKey, FaultToleranceType type, String propertyPath);
+
+    Optional<ConfigurationProperty> findConfig(String commandKey, String groupKey, FaultToleranceType type, String propertyPath);
 
 }

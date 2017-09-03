@@ -22,6 +22,7 @@ package com.kumuluz.ee.fault.tolerance.models;
 
 import com.kumuluz.ee.fault.tolerance.annotations.Bulkhead;
 import com.kumuluz.ee.fault.tolerance.annotations.CircuitBreaker;
+import com.kumuluz.ee.fault.tolerance.annotations.Retry;
 import com.kumuluz.ee.fault.tolerance.annotations.Timeout;
 import com.kumuluz.ee.fault.tolerance.interfaces.FallbackHandler;
 
@@ -45,6 +46,7 @@ public class ExecutionMetadata {
 
     private Bulkhead bulkhead;
     private Timeout timeout;
+    private Retry retry;
     private CircuitBreaker circuitBreaker;
 
     public ExecutionMetadata(Class targetClass, Method method, String commandKey, String groupKey) {
@@ -108,6 +110,14 @@ public class ExecutionMetadata {
 
     public void setTimeout(Timeout timeout) {
         this.timeout = timeout;
+    }
+
+    public Retry getRetry() {
+        return retry;
+    }
+
+    public void setRetry(Retry retry) {
+        this.retry = retry;
     }
 
     public CircuitBreaker getCircuitBreaker() {

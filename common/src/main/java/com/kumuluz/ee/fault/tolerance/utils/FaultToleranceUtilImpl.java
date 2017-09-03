@@ -23,6 +23,7 @@ package com.kumuluz.ee.fault.tolerance.utils;
 import com.kumuluz.ee.configuration.ConfigurationListener;
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import com.kumuluz.ee.fault.tolerance.annotations.*;
+import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
 import com.kumuluz.ee.fault.tolerance.interfaces.FallbackHandler;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceExecutor;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceUtil;
@@ -102,6 +103,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
      * @return                  Result of method execution
      * @throws Exception
      */
+    @Override
     public Object execute(InvocationContext invocationContext, RequestContext requestContext) throws Exception {
 
         ExecutionMetadata config = toExecutionMetadata(invocationContext);
@@ -116,6 +118,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
      * @param property  ConfigurationProperty object to check watch for
      * @return          True if watch is enabled, false otherwise
      */
+    @Override
     public boolean isWatchEnabled(ConfigurationProperty property) {
 
         String configPath = property.configurationPath();
@@ -127,6 +130,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
      * Initiates watch for property if watch is enabled and not already set
      * @param property  ConfigurationProperty object to initiate watch for
      */
+    @Override
     public void watch(ConfigurationProperty property) {
 
         if (!isWatchEnabled(property) || configListenersMap.containsKey(property.configurationPath()))
@@ -179,6 +183,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
      * Removes watch for property
      * @param property  ConfigurationProperty object to remove watch for
      */
+    @Override
     public void removeWatch(ConfigurationProperty property) {
 
         String configPath = property.configurationPath();
@@ -192,6 +197,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
     /**
      * Updates received updated configurations for watched configuration properties
      */
+    @Override
     public void updateConfigurations() {
 
         int cnt = 0;
@@ -200,6 +206,64 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
             executor.setPropertyValue(prop);
             cnt++;
         }
+    }
+
+    @Override
+    public Optional<ConfigurationProperty> findConfig(FaultToleranceType type, String propertyPath) {
+        return findConfig(null, null, type, propertyPath);
+    }
+
+    @Override
+    public Optional<ConfigurationProperty> findConfig(String groupKey, FaultToleranceType type, String propertyPath) {
+        return findConfig(null, groupKey, type, propertyPath);
+    }
+
+    @Override
+    public Optional<ConfigurationProperty> findConfig(String commandKey, String groupKey, FaultToleranceType type, String propertyPath) {
+
+        log.finest("Searhing configuration for '" + commandKey + "', '" + groupKey + "', '" + type.getKey() +
+                "', '" + propertyPath + "'.");
+        ConfigurationUtil configUtil = ConfigurationUtil.getInstance();
+
+        ConfigurationProperty resultProperty = null;
+        Optional<String> value = null;
+
+        if (commandKey != null && groupKey != null) {
+            resultProperty = new ConfigurationProperty(commandKey, groupKey, type, propertyPath);
+            value = configUtil.get(resultProperty.configurationPath());
+
+            if (value.isPresent()) {
+                log.finest("Found configuration at path '" + resultProperty.configurationPath() + "'.");
+
+                return Optional.of(resultProperty);
+            }
+        }
+
+        if (commandKey == null && groupKey != null || resultProperty != null) {
+            resultProperty = new ConfigurationProperty(groupKey, type, propertyPath);
+            value = configUtil.get(resultProperty.configurationPath());
+
+            if (value.isPresent()) {
+                log.finest("Found configuration at path '" + resultProperty.configurationPath() + "'.");
+
+                return Optional.of(resultProperty);
+            }
+        }
+
+        if (commandKey == null && groupKey == null || resultProperty != null) {
+            resultProperty = new ConfigurationProperty(type, propertyPath);
+            value = configUtil.get(resultProperty.configurationPath());
+
+            if (value.isPresent()) {
+                log.finest("Found configuration at path '" + resultProperty.configurationPath() + "'.");
+
+                return Optional.of(resultProperty);
+            }
+        }
+
+        log.finest("No configuration was found.");
+
+        return Optional.empty();
     }
 
     /**
@@ -230,6 +294,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
         Bulkhead bulkhead = null;
         Timeout timeout = null;
         Fallback fallback = null;
+        Retry retry = null;
         CircuitBreaker circuitBreaker = null;
 
         // check for asynchronous annotation
@@ -256,6 +321,12 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
         else if (targetClass.isAnnotationPresent(Fallback.class))
             fallback = targetClass.getAnnotation(Fallback.class);
 
+        // check for retry annotation
+        if (targetMethod.isAnnotationPresent(Retry.class))
+            retry = targetMethod.getAnnotation(Retry.class);
+        else if (targetClass.isAnnotationPresent(Retry.class))
+            retry = targetClass.getAnnotation(Retry.class);
+
         // check for circuit breaker annotation
         if (targetMethod.isAnnotationPresent(CircuitBreaker.class))
             circuitBreaker = targetMethod.getAnnotation(CircuitBreaker.class);
@@ -279,6 +350,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
         metadata.setBulkhead(bulkhead);
         metadata.setTimeout(timeout);
+        metadata.setRetry(retry);
         metadata.setCircuitBreaker(circuitBreaker);
 
         metadatasMap.put(key, metadata);

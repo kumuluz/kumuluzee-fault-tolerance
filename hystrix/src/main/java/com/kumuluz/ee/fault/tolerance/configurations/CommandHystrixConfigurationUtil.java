@@ -37,11 +37,11 @@ import java.util.logging.Logger;
  *
  * @author Luka Šarc
  */
-public class CommandConfigurationUtil extends AbstractHystrixConfigurationUtil {
+public class CommandHystrixConfigurationUtil extends AbstractHystrixConfigurationUtil {
 
-    private static final Logger log = Logger.getLogger(CommandConfigurationUtil.class.getName());
+    private static final Logger log = Logger.getLogger(CommandHystrixConfigurationUtil.class.getName());
 
-    public CommandConfigurationUtil(HystrixFaultToleranceConfigurationManager configManager) {
+    public CommandHystrixConfigurationUtil(HystrixFaultToleranceConfigurationManager configManager) {
         super(configManager);
     }
 

@@ -36,8 +36,8 @@ import javax.interceptor.InvocationContext;
  *
  * @author Luka Šarc
  */
-@Interceptor
 @CircuitBreaker
+@Interceptor
 @Priority(Interceptor.Priority.PLATFORM_AFTER)
 public class FaultToleranceInterceptor {
 

@@ -57,6 +57,7 @@ public class HystrixFaultToleranceConfigurationManager {
 
     @PostConstruct
     private void init() {
+
         kumuluzConfig = ConfigurationUtil.getInstance();
         hystrixConfig = com.netflix.config.ConfigurationManager.getConfigInstance();
 
@@ -130,6 +131,7 @@ public class HystrixFaultToleranceConfigurationManager {
     }
 
     public Optional<Duration> getKumuluzConfigDuration(String keyPath) {
+
         Optional<String> value = getKumuluzConfigString(keyPath);
 
         if (value.isPresent()) {
@@ -138,64 +140,6 @@ public class HystrixFaultToleranceConfigurationManager {
         } else {
             return Optional.empty();
         }
-    }
-
-    public Optional<ConfigurationProperty> findKumuluzConfig(FaultToleranceType type, String propertyPath) {
-        return findKumuluzConfig(null, null, type, propertyPath);
-    }
-
-    public Optional<ConfigurationProperty> findKumuluzConfig(String groupKey, FaultToleranceType type, String propertyPath) {
-        return findKumuluzConfig(null, groupKey, type, propertyPath);
-    }
-
-    public Optional<ConfigurationProperty> findKumuluzConfig(String commandKey, String groupKey, FaultToleranceType type, String propertyPath) {
-
-        log.finest("Searhing configuration for '" + commandKey + "', '" + groupKey + "', '" + type.getKey() +
-                "', '" + propertyPath + "'.");
-
-        ConfigurationProperty resultProperty = null;
-        Optional<String> value = null;
-
-        if (commandKey != null && groupKey != null) {
-            resultProperty = new ConfigurationProperty(commandKey, groupKey, type, propertyPath);
-            value = kumuluzConfig.get(resultProperty.configurationPath());
-
-            if (value.isPresent()) {
-                log.finest("Found configuration at path '" + resultProperty.configurationPath() + "'.");
-
-                return Optional.of(resultProperty);
-            }
-        }
-
-        if (commandKey == null && groupKey != null || resultProperty != null) {
-            resultProperty = new ConfigurationProperty(groupKey, type, propertyPath);
-            value = kumuluzConfig.get(resultProperty.configurationPath());
-
-            if (value.isPresent()) {
-                log.finest("Found configuration at path '" + resultProperty.configurationPath() + "'.");
-
-                return Optional.of(resultProperty);
-            }
-        }
-
-        if (commandKey == null && groupKey == null || resultProperty != null) {
-            resultProperty = new ConfigurationProperty(type, propertyPath);
-            value = kumuluzConfig.get(resultProperty.configurationPath());
-
-            if (value.isPresent()) {
-                log.finest("Found configuration at path '" + resultProperty.configurationPath() + "'.");
-
-                return Optional.of(resultProperty);
-            }
-        }
-
-        log.finest("No configuration was found.");
-
-        return Optional.empty();
-    }
-
-    public boolean isWatchEnabled(ConfigurationProperty property) {
-        return faultToleranceUtil.isWatchEnabled(property);
     }
 
     public void intializeWatch(HystrixConfigurationType type, ConfigurationProperty watchProperty, ConfigurationProperty destProperty) {
@@ -239,18 +183,30 @@ public class HystrixFaultToleranceConfigurationManager {
 
         if (commandWatchToUpdateMap.containsKey(configPath)) {
             toUpdate = commandWatchToUpdateMap.get(configPath);
-            hystrixConfigurationUtil = new CommandConfigurationUtil(this);
+            hystrixConfigurationUtil = new CommandHystrixConfigurationUtil(this);
         } else if (threadPoolWatchToUpdateMap.containsKey(configPath)) {
             toUpdate = threadPoolWatchToUpdateMap.get(configPath);
-            hystrixConfigurationUtil = new ThreadPoolConfigurationUtil(this);
+            hystrixConfigurationUtil = new ThreadPoolHystrixConfigurationUtil(this);
         } else {
             return;
         }
 
         toUpdate.stream().forEach(p -> {
-            log.info("Updating configuration key '" + configPath + "' with value '" + property.getValue() + "'.");
+            log.info("Updating configuration key '" + p.configurationPath() + "' with value '" + property.getValue() + "'.");
 
             hystrixConfigurationUtil.updateProperty(p, property.getValue());
         });
+    }
+
+    public boolean isWatchEnabled(ConfigurationProperty property) {
+        return faultToleranceUtil.isWatchEnabled(property);
+    }
+
+    public Optional<ConfigurationProperty> findKumuluzConfig(String groupKey, FaultToleranceType type, String propertyPath) {
+        return faultToleranceUtil.findConfig(groupKey, type, propertyPath);
+    }
+
+    public Optional<ConfigurationProperty> findKumuluzConfig(String commandKey, String groupKey, FaultToleranceType type, String propertyPath) {
+        return faultToleranceUtil.findConfig(commandKey, groupKey, type, propertyPath);
     }
 }

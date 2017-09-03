@@ -31,6 +31,7 @@ public enum FaultToleranceType {
     BULKHEAD("bulkhead"),
     TIMEOUT("timeout"),
     FALLBACK("fallback"),
+    RETRY("retry"),
     CIRCUIT_BREAKER("circuit-breaker");
 
     private final String key;
@@ -53,6 +54,8 @@ public enum FaultToleranceType {
             return TIMEOUT;
         else if (str.equals(FALLBACK.getKey()))
             return FALLBACK;
+        else if (str.equals(RETRY.getKey()))
+            return RETRY;
         else if (str.equals(CIRCUIT_BREAKER.getKey()))
             return CIRCUIT_BREAKER;
         else

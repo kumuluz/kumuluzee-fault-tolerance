@@ -34,11 +34,11 @@ import java.util.logging.Logger;
  *
  * @author Luka Šarc
  */
-public class ThreadPoolConfigurationUtil extends AbstractHystrixConfigurationUtil {
+public class ThreadPoolHystrixConfigurationUtil extends AbstractHystrixConfigurationUtil {
 
-    private static final Logger log = Logger.getLogger(ThreadPoolConfigurationUtil.class.getName());
+    private static final Logger log = Logger.getLogger(ThreadPoolHystrixConfigurationUtil.class.getName());
 
-    public ThreadPoolConfigurationUtil(HystrixFaultToleranceConfigurationManager configManager) {
+    public ThreadPoolHystrixConfigurationUtil(HystrixFaultToleranceConfigurationManager configManager) {
         super(configManager);
     }
 
