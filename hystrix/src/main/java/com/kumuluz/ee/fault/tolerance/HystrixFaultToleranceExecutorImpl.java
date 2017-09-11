@@ -143,7 +143,7 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         }
 
         if (metadata.getFallbackHandlerClass() != null || metadata.getFallbackMethod() != null)
-            return FallbackHelper.executeFallback(failureCause, metadata, invocationContext, requestContext);
+            return FallbackHelper.executeFallback(failureCause, metadata, invocationContext, null);
         else
             throw new FaultToleranceException("Retry execution failed", failureCause);
     }

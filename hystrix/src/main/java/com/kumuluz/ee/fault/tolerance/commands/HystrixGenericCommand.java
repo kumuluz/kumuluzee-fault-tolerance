@@ -57,7 +57,7 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
     @Override
     protected Object run() throws Exception {
 
-        log.finest("Executin command '" + metadata.getCommandKey() + "'.");
+        log.finest("Executing command '" + metadata.getCommandKey() + "'.");
 
         Object result;
         Object property = ConfigurationManager.getConfigInstance()
@@ -105,11 +105,9 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
 
         Class<? extends Throwable>[] failOn = metadata.getCircuitBreaker().failOn();
 
-        if (failOn != null) {
-            for (Class<? extends Throwable> fo : failOn) {
-                if (fo.isInstance(e))
-                    return true;
-            }
+        for (Class<? extends Throwable> fo : failOn) {
+            if (fo.isInstance(e))
+                return true;
         }
 
         return false;

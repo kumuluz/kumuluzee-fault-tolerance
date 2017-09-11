@@ -14,7 +14,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Logger;
 
 /**
- * Created by luka on 09/09/2017.
+ * Fallback execution helper
+ *
+ * @author Luka Šarc
  */
 public class FallbackHelper {
 
