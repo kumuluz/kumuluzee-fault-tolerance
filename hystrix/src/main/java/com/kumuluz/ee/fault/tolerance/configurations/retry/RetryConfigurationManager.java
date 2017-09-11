@@ -18,7 +18,7 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.configurations;
+package com.kumuluz.ee.fault.tolerance.configurations.retry;
 
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
@@ -148,7 +148,7 @@ public class RetryConfigurationManager {
         }
     }
 
-    public RetryConfig getRetryConfig(String key, Object value) {
+    public RetryConfig getRetryConfig(String key) {
         return retryConfigs.get(key);
     }
 

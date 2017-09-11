@@ -18,7 +18,7 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.configurations;
+package com.kumuluz.ee.fault.tolerance.configurations.hystrix;
 
 import com.kumuluz.ee.fault.tolerance.enums.HystrixConfigurationType;
 import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;

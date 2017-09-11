@@ -20,8 +20,6 @@
  */
 package com.kumuluz.ee.fault.tolerance.commands;
 
-import com.kumuluz.ee.fault.tolerance.interfaces.FallbackHandler;
-import com.kumuluz.ee.fault.tolerance.models.DefaultFallbackExecutionContext;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.HystrixCommand;
@@ -29,10 +27,7 @@ import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
 import org.jboss.weld.context.RequestContext;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.CDI;
 import javax.interceptor.InvocationContext;
-import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Logger;
 
 /**
@@ -64,9 +59,9 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
 
         log.finest("Executin command '" + metadata.getCommandKey() + "'.");
 
+        Object result;
         Object property = ConfigurationManager.getConfigInstance()
                 .getProperty("hystrix.command." + metadata.getCommandKey() + ".execution.isolation.strategy");
-        Object result;
 
         boolean requestContextActivated = false;
         threadExecution = property == null || property == HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
@@ -98,52 +93,12 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
 
         Exception executionException = getExceptionFromThrowable(getExecutionException());
 
-        if (executionException != null) {
-            log.finest("Callback for command '" + metadata.getCommandKey() + "' fired by " +
-                    executionException.getClass().getName());
-        }
-
-        boolean requestContextActivated = false;
-
         try {
-            if (metadata.getFallbackHandlerClass() != null) {
-
-                if (threadExecution && !requestContext.isActive()) {
-                    requestContext.activate();
-                    requestContextActivated = true;
-                }
-
-                Instance<? extends FallbackHandler> fallbackCdi = CDI.current().select(metadata.getFallbackHandlerClass());
-                FallbackHandler fallbackHandler = fallbackCdi.get();
-
-                DefaultFallbackExecutionContext executionContext = new DefaultFallbackExecutionContext();
-                executionContext.setMethod(metadata.getMethod());
-                executionContext.setParameters(invocationContext.getParameters());
-
-                Object response = fallbackHandler.handle(executionContext);
-
-                CDI.current().destroy(fallbackCdi);
-
-                return response;
-            } else if (metadata.getFallbackMethod() != null) {
-                return metadata.getFallbackMethod().invoke(invocationContext.getTarget(),
-                        invocationContext.getParameters());
-            } else {
-                log.severe("Fallback should not be invoked if both fallback mechanisms (" +
-                        "fallbackHandler and fallbackMethod) are unedfined.");
-
-                // TODO: Throw appropriate exception!
-            }
-        } catch (IllegalAccessException|InvocationTargetException e) {
-            log.severe("Exception occured while trying to invoke fallback method for key '" +
-                    metadata.getCommandKey() + "': " + e.getClass().getName());
-            e.printStackTrace();
-        } finally {
-            if (requestContextActivated && requestContext.isActive())
-                requestContext.deactivate();
+            return FallbackHelper.executeFallback(executionException, metadata, invocationContext,
+                    threadExecution ? requestContext : null);
+        } catch (Exception e) {
+            return null;
         }
-
-        return null;
     }
 
     private boolean isFallbackInvokeable(Throwable e) {

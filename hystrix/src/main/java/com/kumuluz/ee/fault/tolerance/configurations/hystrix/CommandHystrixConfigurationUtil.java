@@ -18,7 +18,7 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.configurations;
+package com.kumuluz.ee.fault.tolerance.configurations.hystrix;
 
 import com.kumuluz.ee.fault.tolerance.annotations.Bulkhead;
 import com.kumuluz.ee.fault.tolerance.annotations.CircuitBreaker;
@@ -85,8 +85,10 @@ public class CommandHystrixConfigurationUtil extends AbstractHystrixConfiguratio
             intializeProperty(commandKey, groupKey, type, "enabled", false);
         }
 
+        // fallback needs to be disabled when used with retry
         type = FaultToleranceType.FALLBACK;
-        boolean isFallback = metadata.getFallbackHandlerClass() != null || metadata.getFallbackMethod() != null;
+        boolean isFallback = metadata.getRetry() == null &&
+                (metadata.getFallbackHandlerClass() != null || metadata.getFallbackMethod() != null);
 
         if (!isFallback) {
             intializeProperty(commandKey, groupKey, type, "enabled", false);

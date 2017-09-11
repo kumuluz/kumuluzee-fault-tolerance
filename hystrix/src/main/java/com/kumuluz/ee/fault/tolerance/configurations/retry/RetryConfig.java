@@ -1,4 +1,4 @@
-package com.kumuluz.ee.fault.tolerance.configurations;
+package com.kumuluz.ee.fault.tolerance.configurations.retry;
 
 /**
  * Created by luka on 02/09/2017.

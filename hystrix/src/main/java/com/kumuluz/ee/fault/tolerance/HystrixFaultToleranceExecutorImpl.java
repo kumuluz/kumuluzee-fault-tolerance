@@ -20,9 +20,18 @@
  */
 package com.kumuluz.ee.fault.tolerance;
 
+import com.kumuluz.ee.fault.tolerance.commands.FallbackHelper;
 import com.kumuluz.ee.fault.tolerance.commands.HystrixGenericCommand;
-import com.kumuluz.ee.fault.tolerance.configurations.*;
+import com.kumuluz.ee.fault.tolerance.configurations.hystrix.CommandHystrixConfigurationUtil;
+import com.kumuluz.ee.fault.tolerance.configurations.hystrix.HystrixFaultToleranceConfigurationManager;
+import com.kumuluz.ee.fault.tolerance.configurations.hystrix.ThreadPoolHystrixConfigurationUtil;
+import com.kumuluz.ee.fault.tolerance.configurations.retry.RetryConfigurationManager;
+import com.kumuluz.ee.fault.tolerance.configurations.retry.RetryConfig;
 import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
+import com.kumuluz.ee.fault.tolerance.exceptions.BulkheadException;
+import com.kumuluz.ee.fault.tolerance.exceptions.CircuitBreakerOpenException;
+import com.kumuluz.ee.fault.tolerance.exceptions.FaultToleranceException;
+import com.kumuluz.ee.fault.tolerance.exceptions.TimeoutException;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceExecutor;
 import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
@@ -72,9 +81,75 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
     }
 
     @Override
-    public Object execute(InvocationContext invocationContext, RequestContext requestContext, ExecutionMetadata metadata) throws Exception {
+    public Object execute(InvocationContext invocationContext, RequestContext requestContext,
+                          ExecutionMetadata metadata) throws Exception {
 
         HystrixCommand.Setter hystrixCommand = getHystrixCommandSetter(metadata);
+
+        if (metadata.getRetry() == null) {
+            return executeWithHystrix(hystrixCommand, invocationContext, requestContext, metadata);
+        } else {
+            return executeWithRetry(hystrixCommand, invocationContext, requestContext, metadata);
+        }
+    }
+
+    private Object executeWithRetry(HystrixCommand.Setter hystrixCommand, InvocationContext invocationContext,
+                                    RequestContext requestContext, ExecutionMetadata metadata) throws Exception {
+
+        RetryConfig retryConfig = retryManager.getRetryConfig(metadata.getCommandKey());
+        Throwable failureCause = null;
+        boolean infinite = retryConfig.getMaxRetries() == -1;
+        int execCnt = 1;
+
+        while (infinite || execCnt <= retryConfig.getMaxRetries()) {
+            boolean doRetry = false;
+            boolean doAbort = false;
+
+            try {
+                log.finest("Executing command '" + metadata.getCommandKey() + "' with execution #" + execCnt + ".");
+
+                return executeWithHystrix(hystrixCommand, invocationContext, requestContext, metadata);
+            } catch (TimeoutException e) {
+                doRetry = true;
+            } catch (Throwable e) {
+                for (Class<? extends Throwable> c : retryConfig.getRetryOn()) {
+                    if (c.isInstance(e)) {
+                        doRetry = true;
+                        break;
+                    }
+                }
+
+                for (Class<? extends Throwable> c : retryConfig.getAbortOn()) {
+                    if (c.isInstance(e)) {
+                        doAbort = true;
+                        failureCause = e;
+                        break;
+                    }
+                }
+            }
+
+            if (doAbort)
+                break;
+
+            if (doRetry && (infinite || execCnt < retryConfig.getMaxRetries())) {
+                long jitter = (long)(Math.random() * retryConfig.getJitterInMillis()) -
+                        retryConfig.getJitterInMillis() / 2;
+                long delay = retryConfig.getDelayInMillis() + jitter;
+
+                Thread.sleep(Math.abs(delay));
+            }
+
+            execCnt++;
+        }
+
+        if (metadata.getFallbackHandlerClass() != null || metadata.getFallbackMethod() != null)
+            return FallbackHelper.executeFallback(failureCause, metadata, invocationContext, requestContext);
+        else
+            throw new FaultToleranceException("Retry execution failed", failureCause);
+    }
+
+    private Object executeWithHystrix(HystrixCommand.Setter hystrixCommand, InvocationContext invocationContext,
+                                      RequestContext requestContext, ExecutionMetadata metadata) throws Exception {
 
         HystrixGenericCommand cmd = new HystrixGenericCommand(hystrixCommand, invocationContext, requestContext, metadata);
 
@@ -84,6 +159,16 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
             throw (Exception) e.getCause();
         } catch (HystrixRuntimeException e) {
             log.warning("Hystrix runtime exception was thrown because of " + e.getCause().getClass().getName());
+
+            if (cmd.isResponseShortCircuited())
+                throw new CircuitBreakerOpenException("Circuit is in OPEN state.");
+            else if (cmd.isResponseSemaphoreRejected())
+                throw new BulkheadException("Semaphore ");
+            else if (cmd.isResponseThreadPoolRejected())
+                throw new BulkheadException("Thread pool rejections occured because of ");
+            else if (cmd.isResponseTimedOut())
+                throw new TimeoutException("Timeout occured.");
+
             throw (Exception) e.getCause();
         }
     }
@@ -140,8 +225,8 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
 
         HystrixCommandKey commandKey = HystrixCommandKey.Factory.asKey(key);
 
-        CommandHystrixConfigurationUtil ccUtil = new CommandHystrixConfigurationUtil(configManager);
-        ccUtil.initialize(metadata);
+        CommandHystrixConfigurationUtil chcUtil = new CommandHystrixConfigurationUtil(configManager);
+        chcUtil.initialize(metadata);
 
         if (metadata.getRetry() != null)
             retryManager.initializeRetry(metadata);
@@ -172,8 +257,8 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
             return null;
 
         if (metadata.getBulkhead() != null) {
-            ThreadPoolHystrixConfigurationUtil tpcUtil = new ThreadPoolHystrixConfigurationUtil(configManager);
-            tpcUtil.initialize(metadata);
+            ThreadPoolHystrixConfigurationUtil tphcUtil = new ThreadPoolHystrixConfigurationUtil(configManager);
+            tphcUtil.initialize(metadata);
         }
 
         HystrixThreadPoolKey threadPoolKey = HystrixThreadPoolKey.Factory.asKey(key);
