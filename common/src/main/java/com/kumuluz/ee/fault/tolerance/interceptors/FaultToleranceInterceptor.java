@@ -35,6 +35,7 @@ import javax.interceptor.InvocationContext;
  * Interceptor for handling fault tolerance execution.
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 @CircuitBreaker
 @Interceptor

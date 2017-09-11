@@ -33,6 +33,7 @@ import java.util.logging.Logger;
  * Hystrix thread pool configuration util
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public class ThreadPoolHystrixConfigurationUtil extends AbstractHystrixConfigurationUtil {
 

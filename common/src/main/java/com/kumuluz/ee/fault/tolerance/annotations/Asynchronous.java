@@ -32,6 +32,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * Annotation applying asynchronous (thread isolated) method execution
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 @Inherited
 @InterceptorBinding

@@ -40,6 +40,7 @@ import java.util.logging.Logger;
  * KumuluzEE Config frameworks
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 @ApplicationScoped
 public class HystrixFaultToleranceConfigurationManager {

@@ -32,6 +32,7 @@ import java.lang.reflect.Method;
  * Model for holding information fault tolerance needs to execute method.
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public class ExecutionMetadata {
 

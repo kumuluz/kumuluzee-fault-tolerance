@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
  * KumuluzEE framework extension for Hystrix based fault tolerance
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 @EeExtensionDef(name =  "hystrix", group = EeExtensionGroup.FAULT_TOLERANCE)
 @EeComponentDependency(EeComponentType.CDI)

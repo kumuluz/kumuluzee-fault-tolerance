@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
  * Interface for execution context setting methods and parameters
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public interface ExecutionContext {
 

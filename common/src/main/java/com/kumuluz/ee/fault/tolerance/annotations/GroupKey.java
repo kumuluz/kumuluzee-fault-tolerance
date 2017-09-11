@@ -33,6 +33,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * Annotation setting group key
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 @Inherited
 @InterceptorBinding

@@ -39,6 +39,7 @@ import java.util.logging.Logger;
  * part of Hystrix framework
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 @ApplicationScoped
 public class RetryConfigurationManager {

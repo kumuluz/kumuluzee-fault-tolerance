@@ -34,6 +34,7 @@ import java.util.logging.Logger;
  * Hystrix generic command for wrapping method execution in fault tolerance
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public class HystrixGenericCommand extends HystrixCommand<Object> {
 

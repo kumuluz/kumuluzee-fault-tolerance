@@ -24,6 +24,7 @@ package com.kumuluz.ee.fault.tolerance.enums;
  * Enum type for fault tolerance pattern type.
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public enum FaultToleranceType {
 

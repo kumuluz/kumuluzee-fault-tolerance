@@ -1,7 +1,10 @@
 package com.kumuluz.ee.fault.tolerance.configurations.retry;
 
 /**
- * Created by luka on 02/09/2017.
+ * Configuration model class for retry pattern
+ *
+ * @author Luka Šarc
+ * @since 1.0.0
  */
 public class RetryConfig {
 

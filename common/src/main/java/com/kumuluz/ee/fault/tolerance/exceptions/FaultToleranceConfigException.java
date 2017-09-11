@@ -24,6 +24,7 @@ package com.kumuluz.ee.fault.tolerance.exceptions;
  * Faul tolerance config exception class
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public class FaultToleranceConfigException extends FaultToleranceException {
 

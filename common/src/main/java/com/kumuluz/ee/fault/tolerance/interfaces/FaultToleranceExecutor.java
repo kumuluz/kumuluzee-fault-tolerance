@@ -31,6 +31,7 @@ import javax.interceptor.InvocationContext;
  * fault tolerance library.
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public interface FaultToleranceExecutor {
 

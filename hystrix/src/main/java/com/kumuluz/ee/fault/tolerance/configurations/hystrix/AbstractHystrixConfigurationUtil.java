@@ -32,6 +32,7 @@ import java.util.logging.Logger;
  * Abstract Hystrix configuration util
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public abstract class AbstractHystrixConfigurationUtil {
 

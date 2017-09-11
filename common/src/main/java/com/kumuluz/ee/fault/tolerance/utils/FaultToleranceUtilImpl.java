@@ -45,6 +45,7 @@ import java.util.logging.Logger;
  * fault tolerance executor
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 @ApplicationScoped
 public class FaultToleranceUtilImpl implements FaultToleranceUtil {

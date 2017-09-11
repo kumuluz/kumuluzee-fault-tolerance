@@ -36,6 +36,7 @@ import java.util.logging.Logger;
  * Hystrix command configuration util
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public class CommandHystrixConfigurationUtil extends AbstractHystrixConfigurationUtil {
 

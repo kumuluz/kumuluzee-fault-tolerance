@@ -34,6 +34,7 @@ import java.util.List;
  * Model for holding information about configuration properties and assigned values.
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public class ConfigurationProperty {
 

@@ -54,6 +54,7 @@ import java.util.logging.Logger;
  * Hystrix implementation of fault tolerance executor
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 @RequestScoped
 public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor {
@@ -132,8 +133,8 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
                 break;
 
             if (doRetry && (infinite || execCnt < retryConfig.getMaxRetries())) {
-                long jitter = (long)(Math.random() * retryConfig.getJitterInMillis()) -
-                        retryConfig.getJitterInMillis() / 2;
+                long jitter = (long)(Math.random() * retryConfig.getJitterInMillis() * 2) -
+                        retryConfig.getJitterInMillis();
                 long delay = retryConfig.getDelayInMillis() + jitter;
 
                 Thread.sleep(Math.abs(delay));

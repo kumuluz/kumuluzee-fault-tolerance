@@ -32,6 +32,7 @@ import java.util.Optional;
  * fault tolerance executor
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public interface FaultToleranceUtil {
 

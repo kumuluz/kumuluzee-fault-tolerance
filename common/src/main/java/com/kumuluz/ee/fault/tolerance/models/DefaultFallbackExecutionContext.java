@@ -28,6 +28,7 @@ import java.lang.reflect.Method;
  * Default ExecutionContext implementation for fallback
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public class DefaultFallbackExecutionContext implements ExecutionContext {
 

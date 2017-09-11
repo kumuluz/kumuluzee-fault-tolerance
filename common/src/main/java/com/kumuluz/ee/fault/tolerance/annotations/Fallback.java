@@ -37,6 +37,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * on either method or class
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 @Inherited
 @InterceptorBinding

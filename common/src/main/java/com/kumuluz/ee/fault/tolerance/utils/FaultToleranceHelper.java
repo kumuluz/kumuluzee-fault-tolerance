@@ -30,6 +30,7 @@ import java.util.logging.Logger;
  * Helper class for fault tolerance.
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public class FaultToleranceHelper {
 

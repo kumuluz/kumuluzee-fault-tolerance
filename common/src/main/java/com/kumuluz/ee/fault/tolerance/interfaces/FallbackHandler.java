@@ -24,6 +24,7 @@ package com.kumuluz.ee.fault.tolerance.interfaces;
  * Interface for classes to be called on fallback execution
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public interface FallbackHandler<T> {
 

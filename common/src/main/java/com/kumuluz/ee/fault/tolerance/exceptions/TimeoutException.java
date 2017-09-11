@@ -24,6 +24,7 @@ package com.kumuluz.ee.fault.tolerance.exceptions;
  * Fault tolerance timeout exception class
  *
  * @author Luka Šarc
+ * @since 1.0.0
  */
 public class TimeoutException extends FaultToleranceException {
 

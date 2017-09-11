@@ -4,7 +4,7 @@
 > KumuluzEE Fault Tolerance extension for the Kumuluz EE microservice framework. 
 
 KumuluzEE Fault Tolerance is a fault tolerance extension for the KumuluzEE microservice framework. It provides support 
-for fault tolerance and latency tolerance with circuit breaker, bulkhead, timeout and fallback patterns. 
+for fault tolerance and latency tolerance with circuit breaker, bulkhead, timeout, retry and fallback patterns. 
 KumuluzEE Fault Tolerance supports basic fault tolerance configuration using annotations. Additionaly, 
 configuring via KumuluzEE Config is supported. 
 
@@ -29,11 +29,11 @@ You can add the KumuluzEE Fault Tolerance with Hystrix by adding the following d
 ```
 
 To enable fault tolerance patterns using KumuluzEE Fault Tolerance, CDI class has to be annotated with annotations for
-desired fault tolerance pattern. Currently `@CircuitBreaker`, `@Bulkhead`, `@Timeout` and `@Fallback` are supported.
+desired fault tolerance pattern. Currently `@CircuitBreaker`, `@Bulkhead`, `@Timeout`, `@Retry and `@Fallback` are supported.
 If annotation is added on class, the pattern will be applied on all methods within class.
 
 KumuluzEE Fault Tolerance will intercept the method execution and proceed the execution within the fault tolerance to 
-track and monitor success, failures, timeouts, etc. Currently, `@Bulkhead`, `@Timeout` and `@Fallback` cannot
+track and monitor success, failures, timeouts, etc. Currently, `@Bulkhead`, `@Timeout`, `@Retry` and `@Fallback` cannot
 be used as standalone annotations. They can only be used in conjunction with `@CircuitBreaker`. In future,
 we will add additional usage possibilities.
 
@@ -45,7 +45,7 @@ be overriden with `@CommandKey` and `@GroupKey` annotations.
 
 KumuluzEE Fault Tolerance properties can be configured using annotations and/or KumuluzEE Config.
 
-`@CircuitBreaker`, `@Timeout` and `@Fallback` setting are binded to command. `@Bulkhead` is binded to groups. If 
+`@CircuitBreaker`, `@Timeout`, `@Retry` and `@Fallback` setting are binded to command. `@Bulkhead` is binded to groups. If 
 bulkhead pattern is used on single method, default group key will be set to `<class-name>-<method-name>`. It can
 be overriden with `@GroupKey` annotation. If bulkhead pattern is applied on class, all methods will be executed within the
 same bulkhead group key and limitations defined within bulkhead pattern will be applied to all commands within the group.
@@ -159,7 +159,7 @@ for specifing time unit when using annotation).
 - __requestVolumeThreshold (config:  request-volume-threshold)__ - number of minimum executions within rolling window 
 needed to trip the circuit.
 - __failureRatio (config: failure-ratio)__ - failure ratio that causes circuit to trip open.
-- __failOn__ - array of Throwable classes marking execution as failed (can only be set with annotation),
+- __failOn__ - array of Throwable classes marking execution as failed (can only be set with annotation).
 
 Some additional Hystrix specific properties are available using the KumuluzEE Config settings:
 
@@ -201,6 +201,24 @@ timeout pattern.
 Common settings, available via annotation or KumuluzEE Config can be applied:
 
 - __value (config: value)__ - timeout value (use with unit for specifing time unit when using annotation).
+
+#### Retry pattern
+
+Retry pattern is applied with `@Retry` annotation. If used on class, all methods will be executed with 
+retry pattern. 
+
+Common settings, available via annotation or KumuluzEE Config can be applied:
+
+- __maxRetries (config: max-retries)__ - number of retries if execution does not succeed. If set to -1, it will retry
+to infinity.
+- __delay (config: delay)__ - constant delay added between each retry attempt (use with unit for specifing time unit 
+when using annotation).
+- __jitter (config: jitter)__ - random jitter added between each retry attempt on top of constant delay 
+(use with unit for specifing time unit when using annotation).
+- __retryOn__ - array of Throwable classes at which retry pattern will be applied in case of failed execution
+ (can only be set with annotation).
+- __abortOn__ - array of Throwable classes at which retry pattern will be immediately aborted in case of failed 
+execution (can only be set with annotation).
 
 #### Fallback pattern
 
