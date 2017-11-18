@@ -20,11 +20,7 @@
  */
 package com.kumuluz.ee.fault.tolerance.models;
 
-import com.kumuluz.ee.fault.tolerance.annotations.Bulkhead;
-import com.kumuluz.ee.fault.tolerance.annotations.CircuitBreaker;
-import com.kumuluz.ee.fault.tolerance.annotations.Retry;
-import com.kumuluz.ee.fault.tolerance.annotations.Timeout;
-import com.kumuluz.ee.fault.tolerance.interfaces.FallbackHandler;
+import org.eclipse.microprofile.faulttolerance.*;
 
 import java.lang.reflect.Method;
 

@@ -20,6 +20,8 @@
  */
 package com.kumuluz.ee.fault.tolerance.exceptions;
 
+import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceException;
+
 /**
  * Faul tolerance config exception class
  *

@@ -20,13 +20,13 @@
  */
 package com.kumuluz.ee.fault.tolerance.configurations.hystrix;
 
-import com.kumuluz.ee.fault.tolerance.annotations.Bulkhead;
-import com.kumuluz.ee.fault.tolerance.annotations.CircuitBreaker;
-import com.kumuluz.ee.fault.tolerance.annotations.Timeout;
 import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
 import com.kumuluz.ee.fault.tolerance.enums.HystrixConfigurationType;
 import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
+import org.eclipse.microprofile.faulttolerance.Bulkhead;
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
+import org.eclipse.microprofile.faulttolerance.Timeout;
 
 import java.time.Duration;
 import java.util.Optional;

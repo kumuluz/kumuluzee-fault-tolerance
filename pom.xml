@@ -29,6 +29,8 @@
 
         <kumuluzee.version>2.4.0</kumuluzee.version>
 
+        <microprofile-faulttolerance.version>1.0</microprofile-faulttolerance.version>
+
         <nexus.staging.plugin.version>1.6.8</nexus.staging.plugin.version>
         <gpg.plugin.version>1.6</gpg.plugin.version>
     </properties>

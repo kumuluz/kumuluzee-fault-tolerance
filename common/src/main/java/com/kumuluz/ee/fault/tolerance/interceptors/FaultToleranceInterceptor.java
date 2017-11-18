@@ -20,8 +20,8 @@
  */
 package com.kumuluz.ee.fault.tolerance.interceptors;
 
-import com.kumuluz.ee.fault.tolerance.annotations.CircuitBreaker;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceUtil;
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.jboss.weld.context.RequestContext;
 import org.jboss.weld.context.unbound.Unbound;
 

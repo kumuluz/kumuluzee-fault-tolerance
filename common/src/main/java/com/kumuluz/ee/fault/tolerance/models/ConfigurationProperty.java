@@ -22,9 +22,9 @@ package com.kumuluz.ee.fault.tolerance.models;
 
 import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
 import com.kumuluz.ee.fault.tolerance.exceptions.FaultToleranceConfigException;
-import com.kumuluz.ee.fault.tolerance.exceptions.FaultToleranceException;
 import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceHelper;
 import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceUtilImpl;
+import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceException;
 
 import java.util.ArrayList;
 import java.util.Arrays;

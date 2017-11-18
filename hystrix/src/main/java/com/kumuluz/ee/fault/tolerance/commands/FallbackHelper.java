@@ -21,10 +21,10 @@
 package com.kumuluz.ee.fault.tolerance.commands;
 
 import com.kumuluz.ee.fault.tolerance.exceptions.FaultToleranceConfigException;
-import com.kumuluz.ee.fault.tolerance.exceptions.FaultToleranceException;
-import com.kumuluz.ee.fault.tolerance.interfaces.FallbackHandler;
 import com.kumuluz.ee.fault.tolerance.models.DefaultFallbackExecutionContext;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
+import org.eclipse.microprofile.faulttolerance.FallbackHandler;
+import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceException;
 import org.jboss.weld.context.RequestContext;
 
 import javax.enterprise.inject.Instance;

@@ -20,7 +20,7 @@
  */
 package com.kumuluz.ee.fault.tolerance.models;
 
-import com.kumuluz.ee.fault.tolerance.interfaces.ExecutionContext;
+import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 
 import java.lang.reflect.Method;
 

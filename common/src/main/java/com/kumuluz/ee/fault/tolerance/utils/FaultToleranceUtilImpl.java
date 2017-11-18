@@ -22,13 +22,14 @@ package com.kumuluz.ee.fault.tolerance.utils;
 
 import com.kumuluz.ee.configuration.ConfigurationListener;
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
-import com.kumuluz.ee.fault.tolerance.annotations.*;
+import com.kumuluz.ee.fault.tolerance.annotations.CommandKey;
+import com.kumuluz.ee.fault.tolerance.annotations.GroupKey;
 import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
-import com.kumuluz.ee.fault.tolerance.interfaces.FallbackHandler;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceExecutor;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceUtil;
 import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
+import org.eclipse.microprofile.faulttolerance.*;
 import org.jboss.weld.context.RequestContext;
 
 import javax.annotation.PostConstruct;
