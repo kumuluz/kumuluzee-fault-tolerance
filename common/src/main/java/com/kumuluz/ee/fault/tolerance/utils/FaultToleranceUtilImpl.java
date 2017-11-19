@@ -223,7 +223,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
     @Override
     public Optional<ConfigurationProperty> findConfig(String commandKey, String groupKey, FaultToleranceType type, String propertyPath) {
 
-        log.finest("Searhing configuration for '" + commandKey + "', '" + groupKey + "', '" + type.getKey() +
+        log.finest("Searching configuration for '" + commandKey + "', '" + groupKey + "', '" + type.getKey() +
                 "', '" + propertyPath + "'.");
         ConfigurationUtil configUtil = ConfigurationUtil.getInstance();
 
@@ -274,7 +274,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
      * @param ic    InvocationContext associated with the execution
      * @return      ExecutionMetadata object with execution info
      */
-    private ExecutionMetadata toExecutionMetadata(InvocationContext ic) {
+    public ExecutionMetadata toExecutionMetadata(InvocationContext ic) {
 
         Method targetMethod = ic.getMethod();
         Object targetObject = ic.getTarget();
@@ -317,7 +317,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
         else if (targetClass.isAnnotationPresent(Timeout.class))
             timeout = targetClass.getAnnotation(Timeout.class);
 
-        // checko for fallback annotation
+        // check for fallback annotation
         if (targetMethod.isAnnotationPresent(Fallback.class))
             fallback = targetMethod.getAnnotation(Fallback.class);
         else if (targetClass.isAnnotationPresent(Fallback.class))

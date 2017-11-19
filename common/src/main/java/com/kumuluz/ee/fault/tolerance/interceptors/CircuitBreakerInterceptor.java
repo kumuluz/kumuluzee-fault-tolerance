@@ -39,8 +39,8 @@ import javax.interceptor.InvocationContext;
  */
 @CircuitBreaker
 @Interceptor
-@Priority(Interceptor.Priority.PLATFORM_AFTER)
-public class FaultToleranceInterceptor {
+@Priority(Interceptor.Priority.PLATFORM_AFTER + FaultToleranceInterceptorPriority.CIRCUIT_BREAKER)
+public class CircuitBreakerInterceptor {
 
     @Inject
     private FaultToleranceUtil faultToleranceUtil;
@@ -51,7 +51,11 @@ public class FaultToleranceInterceptor {
 
     @AroundInvoke
     public Object executeFaultTolerance(InvocationContext invocationContext) throws Exception {
-        return faultToleranceUtil.execute(invocationContext, requestContext);
+
+        if (FaultToleranceInterceptorPriority.shouldExecute(invocationContext))
+            return faultToleranceUtil.execute(invocationContext, requestContext);
+        else
+            return invocationContext.proceed();
     }
 
 }

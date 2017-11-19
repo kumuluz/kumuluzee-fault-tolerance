@@ -4,6 +4,9 @@
        bean-discovery-mode="annotated">
 
     <interceptors>
-        <class>com.kumuluz.ee.fault.tolerance.interceptors.FaultToleranceInterceptor</class>
+        <class>com.kumuluz.ee.fault.tolerance.interceptors.TimeoutInterceptor</class>
+        <class>com.kumuluz.ee.fault.tolerance.interceptors.CircuitBreakerInterceptor</class>
+        <class>com.kumuluz.ee.fault.tolerance.interceptors.BulkheadInterceptor</class>
+        <class>com.kumuluz.ee.fault.tolerance.interceptors.RetryInterceptor</class>
     </interceptors>
 </beans>
