@@ -20,7 +20,6 @@
  */
 package com.kumuluz.ee.fault.tolerance.interceptors;
 
-import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceUtil;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.jboss.weld.context.RequestContext;
@@ -53,8 +52,7 @@ public class TimeoutInterceptor {
     @AroundInvoke
     public Object executeFaultTolerance(InvocationContext invocationContext) throws Exception {
 
-        if (FaultToleranceInterceptorPriority.shouldExecute(faultToleranceUtil, invocationContext,
-                FaultToleranceType.TIMEOUT))
+        if (FaultToleranceInterceptorPriority.shouldExecute(invocationContext))
             return faultToleranceUtil.execute(invocationContext, requestContext);
         else
             return invocationContext.proceed();
