@@ -160,7 +160,7 @@ public class RetryConfigurationManager {
         if (retryWatches.containsKey(configPath)) {
             List<String> commandKeys = retryWatches.get(configPath);
 
-            if (!commandKeys.stream().anyMatch(ck -> ck.equals(newWatchCommandKey))) {
+            if (commandKeys.stream().noneMatch(ck -> ck.equals(newWatchCommandKey))) {
                 log.finest("Adding command key '" + newWatchCommandKey + "' to key '" + configPath + "' in map.");
 
                 commandKeys.add(newWatchCommandKey);
@@ -186,7 +186,7 @@ public class RetryConfigurationManager {
         log.info("Received update for key path '" + configPath + "'.");
 
         if (retryWatches.containsKey(configPath)) {
-            retryWatches.get(configPath).stream().forEach(ck -> {
+            retryWatches.get(configPath).forEach(ck -> {
                 log.info("Updating configuration key '" + ck + "' with value '" + property.getValue() + "'.");
 
                 ConfigurationProperty commandProperty = new ConfigurationProperty(ck, null, property.getType(),
