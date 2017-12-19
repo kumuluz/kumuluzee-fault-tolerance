@@ -22,7 +22,10 @@ package com.kumuluz.ee.fault.tolerance;
 
 import com.kumuluz.ee.common.Extension;
 import com.kumuluz.ee.common.config.EeConfig;
-import com.kumuluz.ee.common.dependencies.*;
+import com.kumuluz.ee.common.dependencies.EeComponentDependency;
+import com.kumuluz.ee.common.dependencies.EeComponentType;
+import com.kumuluz.ee.common.dependencies.EeExtensionDef;
+import com.kumuluz.ee.common.dependencies.EeExtensionGroup;
 import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * @since 1.0.0
  */
 @EeExtensionDef(name =  "hystrix", group = EeExtensionGroup.FAULT_TOLERANCE)
-@EeComponentDependency(EeComponentType.CDI)
+@EeComponentDependency(value = EeComponentType.CDI, implementations = {"Weld"})
 public class HystrixFaultToleranceExtension implements Extension {
 
     private static final Logger log = LoggerFactory.getLogger(HystrixFaultToleranceExtension.class);
