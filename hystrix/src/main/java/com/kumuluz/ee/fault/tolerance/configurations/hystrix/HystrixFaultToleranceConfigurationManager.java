@@ -94,7 +94,7 @@ public class HystrixFaultToleranceConfigurationManager {
             case "circuit-breaker.metrics.health-interval":
             case "timeout.value":
                 Optional<Duration> durationVal = getKumuluzConfigDuration(property.configurationPath());
-                return durationVal.isPresent() ? Optional.of(durationVal.get().toMillis()) : Optional.empty();
+                return durationVal.map(Duration::toMillis);
             case "circuit-breaker.failure-ratio":
                 Optional<Double> doubleVal = getKumuluzConfigDouble(property.configurationPath());
                 return doubleVal.isPresent() ? Optional.of(doubleVal.get()) : Optional.empty();
@@ -154,7 +154,7 @@ public class HystrixFaultToleranceConfigurationManager {
         if (map.containsKey(configPath)) {
             List<ConfigurationProperty> properties = map.get(configPath);
 
-            if (!properties.stream().anyMatch(p -> p.configurationPath().equals(newPropertyKeyPath))) {
+            if (properties.stream().noneMatch(p -> p.configurationPath().equals(newPropertyKeyPath))) {
                 log.finest("Adding key path '" + newPropertyKeyPath + "' to key '" + configPath + "' in map.");
 
                 properties.add(destProperty);
@@ -192,7 +192,7 @@ public class HystrixFaultToleranceConfigurationManager {
             return;
         }
 
-        toUpdate.stream().forEach(p -> {
+        toUpdate.forEach(p -> {
             log.info("Updating configuration key '" + p.configurationPath() + "' with value '" + property.getValue() + "'.");
 
             hystrixConfigurationUtil.updateProperty(p, property.getValue());

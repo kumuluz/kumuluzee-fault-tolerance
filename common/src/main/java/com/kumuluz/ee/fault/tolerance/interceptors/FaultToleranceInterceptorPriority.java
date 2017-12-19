@@ -41,7 +41,7 @@ public class FaultToleranceInterceptorPriority {
 
         Boolean isExecuted = (Boolean) ic.getContextData().get(CONTEXT_DATA_EXECUTION_METADATA_KEY);
 
-        if (isExecuted != null && isExecuted.booleanValue())
+        if (isExecuted != null && isExecuted)
             return false;
 
         ic.getContextData().put(CONTEXT_DATA_EXECUTION_METADATA_KEY, Boolean.TRUE);

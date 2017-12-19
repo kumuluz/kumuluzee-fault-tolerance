@@ -239,10 +239,8 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
 
     private HystrixCommandGroupKey getHystrixCommandGroupKey(ExecutionMetadata metadata) {
 
-        HystrixCommandGroupKey commandGroupKey = HystrixCommandGroupKey.Factory
+        return HystrixCommandGroupKey.Factory
                 .asKey(metadata.getGroupKey());
-
-        return commandGroupKey;
     }
 
     private HystrixThreadPoolKey getHystrixThreadPoolKey(ExecutionMetadata metadata) {

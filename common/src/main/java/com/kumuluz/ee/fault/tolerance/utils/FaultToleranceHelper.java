@@ -134,7 +134,7 @@ public class FaultToleranceHelper {
 
         if (value != null) {
             if (value instanceof Integer)
-                return ((Integer) value).intValue();
+                return (Integer) value;
             else if (value instanceof Long)
                 return ((Long) value).intValue();
         }
@@ -148,18 +148,16 @@ public class FaultToleranceHelper {
             if (value instanceof Integer)
                 return ((Integer) value).longValue();
             else if (value instanceof Long)
-                return ((Long) value).longValue();
+                return (Long) value;
         }
 
-        return -1l;
+        return -1L;
     }
 
     public static boolean toBooleanValue(Object value) {
 
-        if (value != null && value instanceof Boolean)
-            return ((Boolean) value).booleanValue();
+        return value != null && value instanceof Boolean && (Boolean) value;
 
-        return false;
     }
 
 }

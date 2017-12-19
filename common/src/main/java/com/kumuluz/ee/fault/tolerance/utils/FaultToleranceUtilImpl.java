@@ -76,17 +76,12 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
         ConfigurationUtil configUtil = ConfigurationUtil.getInstance();
 
         Optional<Boolean> watchEnabledOptional = configUtil.getBoolean(SERVICE_NAME + ".config.watch-enabled");
-        if (watchEnabledOptional.isPresent())
-            watchEnabled = watchEnabledOptional.get();
-        else
-            watchEnabled = null;
+        watchEnabled = watchEnabledOptional.orElse(null);
 
-        if (watchEnabled == null || watchEnabled.booleanValue()) {
+        if (watchEnabled == null || watchEnabled) {
             Optional<String> watchPropertiesOptional = configUtil.get(SERVICE_NAME + ".config.watch-properties");
 
-            if (watchPropertiesOptional.isPresent()) {
-                watchProperties = Arrays.asList(watchPropertiesOptional.get().split(","));
-            }
+            watchPropertiesOptional.ifPresent(s -> watchProperties = Arrays.asList(s.split(",")));
         }
     }
 
@@ -124,8 +119,8 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
     public boolean isWatchEnabled(ConfigurationProperty property) {
 
         String configPath = property.configurationPath();
-        return watchEnabled != null && watchEnabled.booleanValue() &&
-                watchProperties.stream().anyMatch(p -> configPath.endsWith(p));
+        return watchEnabled != null && watchEnabled &&
+                watchProperties.stream().anyMatch(configPath::endsWith);
     }
 
     /**
@@ -228,7 +223,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
         ConfigurationUtil configUtil = ConfigurationUtil.getInstance();
 
         ConfigurationProperty resultProperty = null;
-        Optional<String> value = null;
+        Optional<String> value;
 
         if (commandKey != null && groupKey != null) {
             resultProperty = new ConfigurationProperty(commandKey, groupKey, type, propertyPath);
@@ -427,7 +422,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
                     if (targetMethod.getReturnType().equals(fallbackMethod.getReturnType()))
                         return fallback.value();
-                } catch (NoSuchMethodException e) {
+                } catch (NoSuchMethodException ignored) {
                 }
 
                 break;
