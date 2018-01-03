@@ -47,7 +47,9 @@ import org.jboss.weld.context.RequestContext;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.interceptor.InvocationContext;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -103,41 +105,27 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         int execCnt = 1;
 
         while (infinite || execCnt <= retryConfig.getMaxRetries()) {
-            boolean doRetry = false;
-            boolean doAbort = false;
+            boolean doRetry, doAbort;
 
             try {
                 log.finest("Executing command '" + metadata.getCommandKey() + "' with execution #" + execCnt + ".");
 
                 return executeWithHystrix(hystrixCommand, invocationContext, requestContext, metadata);
-            } catch (TimeoutException e) {
-                doRetry = true;
             } catch (Throwable e) {
-                for (Class<? extends Throwable> c : retryConfig.getRetryOn()) {
-                    if (c.isInstance(e)) {
-                        doRetry = true;
-                        break;
-                    }
-                }
+                doRetry = Arrays.stream(retryConfig.getRetryOn()).anyMatch(ro -> ro.isInstance(e));
+                doAbort = Arrays.stream(retryConfig.getAbortOn()).anyMatch(ao -> ao.isInstance(e));
 
-                for (Class<? extends Throwable> c : retryConfig.getAbortOn()) {
-                    if (c.isInstance(e)) {
-                        doAbort = true;
-                        failureCause = e;
-                        break;
-                    }
+                if (doAbort) {
+                    failureCause = e;
+                    break;
                 }
             }
-
-            if (doAbort)
-                break;
 
             if (doRetry && (infinite || execCnt < retryConfig.getMaxRetries())) {
                 long jitter = (long)(Math.random() * retryConfig.getJitterInMillis() * 2) -
                         retryConfig.getJitterInMillis();
-                long delay = retryConfig.getDelayInMillis() + jitter;
 
-                Thread.sleep(Math.abs(delay));
+                TimeUnit.MILLISECONDS.sleep(retryConfig.getDelayInMillis() + jitter);
             }
 
             execCnt++;
