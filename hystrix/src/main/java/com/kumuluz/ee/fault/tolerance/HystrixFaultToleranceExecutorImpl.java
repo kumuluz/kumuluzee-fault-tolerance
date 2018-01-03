@@ -161,16 +161,18 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         } catch (HystrixRuntimeException e) {
             log.warning("Hystrix runtime exception was thrown because of " + e.getCause().getClass().getName());
 
-            if (cmd.isResponseShortCircuited())
-                throw new CircuitBreakerOpenException("Circuit is in OPEN state.");
-            else if (cmd.isResponseSemaphoreRejected())
-                throw new BulkheadException("Semaphore ");
-            else if (cmd.isResponseThreadPoolRejected())
-                throw new BulkheadException("Thread pool rejections occured because of ");
-            else if (cmd.isResponseTimedOut())
-                throw new TimeoutException("Timeout occured.");
-
-            throw (Exception) e.getCause();
+            switch (e.getFailureType()) {
+                case TIMEOUT:
+                    throw new TimeoutException("Execution timed out.");
+                case SHORTCIRCUIT:
+                    throw new CircuitBreakerOpenException("Circuit breaker is in OPEN state.");
+                case REJECTED_THREAD_EXECUTION:
+                    throw new BulkheadException("Thread execution was rejected.");
+                case REJECTED_SEMAPHORE_EXECUTION:
+                    throw new BulkheadException("Semaphore execution was rejected.");
+                default:
+                    throw (Exception) e.getCause();
+            }
         }
     }
 

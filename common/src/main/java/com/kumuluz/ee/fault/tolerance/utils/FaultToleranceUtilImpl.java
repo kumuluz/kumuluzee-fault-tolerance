@@ -30,6 +30,7 @@ import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceUtil;
 import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 import org.eclipse.microprofile.faulttolerance.*;
+import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 import org.jboss.weld.context.RequestContext;
 
 import javax.annotation.PostConstruct;
@@ -39,6 +40,7 @@ import javax.inject.Inject;
 import javax.interceptor.InvocationContext;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 /**
@@ -332,8 +334,9 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
         boolean isAsync = asynchronous != null;
 
-        if (isAsync) {
-            // TODO: Check if returns Future<T>
+        if (isAsync && !targetMethod.getReturnType().equals(Future.class)) {
+            throw new FaultToleranceDefinitionException("If target method is annotated with @Asynchronous " +
+                    "Future is expected to be method's return type.");
         }
 
         Class<? extends FallbackHandler> fallbackHandlerClass = getFallbackHandlerClass(fallback, targetMethod);
