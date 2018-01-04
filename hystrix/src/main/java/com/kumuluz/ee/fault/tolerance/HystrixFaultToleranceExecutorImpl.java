@@ -107,6 +107,13 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         while (infinite || execCnt <= retryConfig.getMaxRetries()) {
             boolean doRetry, doAbort;
 
+            if (execCnt > 1) {
+                long jitter = (long)(Math.random() * retryConfig.getJitterInMillis() * 2) -
+                        retryConfig.getJitterInMillis();
+
+                TimeUnit.MILLISECONDS.sleep(retryConfig.getDelayInMillis() + jitter);
+            }
+
             try {
                 log.finest("Executing command '" + metadata.getCommandKey() + "' with execution #" + execCnt + ".");
 
@@ -115,17 +122,10 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
                 doRetry = Arrays.stream(retryConfig.getRetryOn()).anyMatch(ro -> ro.isInstance(e));
                 doAbort = Arrays.stream(retryConfig.getAbortOn()).anyMatch(ao -> ao.isInstance(e));
 
-                if (doAbort) {
+                if (doAbort || !doRetry) {
                     failureCause = e;
                     break;
                 }
-            }
-
-            if (doRetry && (infinite || execCnt < retryConfig.getMaxRetries())) {
-                long jitter = (long)(Math.random() * retryConfig.getJitterInMillis() * 2) -
-                        retryConfig.getJitterInMillis();
-
-                TimeUnit.MILLISECONDS.sleep(retryConfig.getDelayInMillis() + jitter);
             }
 
             execCnt++;
