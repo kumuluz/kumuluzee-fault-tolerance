@@ -342,6 +342,11 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
         Class<? extends FallbackHandler> fallbackHandlerClass = getFallbackHandlerClass(fallback, targetMethod);
         Method fallbackMethod = getFallbackMethod(fallback, targetClass, targetMethod);
 
+        if (fallbackHandlerClass != null && fallbackMethod != null) {
+            throw new FaultToleranceDefinitionException("When using @Fallback either fallbackHandler or " +
+                    "fallbackeMethod should be provided, but not both");
+        }
+
         ExecutionMetadata metadata = new ExecutionMetadata(targetClass, targetMethod, commandKey, groupKey);
 
         metadata.setAsynchronous(isAsync);
@@ -423,8 +428,12 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
                 try {
                     Method fallbackMethod = fallbackClass.getMethod(method.getName(), method.getParameterTypes());
 
-                    if (targetMethod.getReturnType().equals(fallbackMethod.getReturnType()))
+                    if (targetMethod.getReturnType().equals(fallbackMethod.getReturnType())) {
                         return fallback.value();
+                    } else {
+                        throw new FaultToleranceDefinitionException("FallbackHandler on @Fallback should have " +
+                                "the same return type on handle mehod as intercepted target method.");
+                    }
                 } catch (NoSuchMethodException ignored) {
                 }
 
@@ -453,9 +462,12 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
         if (methodName != null && methodName.length() > 0) {
             for (Method m : targetClass.getMethods()) {
-                if (m.getName().equals(methodName) &&
-                        m.getReturnType().equals(targetMethod.getReturnType()) &&
-                        m.getParameterCount() == targetMethod.getParameterCount()) {
+                if (m.getName().equals(methodName) && m.getParameterCount() == targetMethod.getParameterCount()) {
+                    if (!m.getReturnType().equals(targetMethod.getReturnType())) {
+                        throw new FaultToleranceDefinitionException("FallbackMethod on @Fallback should have " +
+                                "the same return type as intercepted target method.");
+                    }
+
                     boolean parameterMatch = true;
 
                     for (int i = 0; i < m.getParameterTypes().length; i++) {
@@ -465,8 +477,12 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
                         }
                     }
 
-                    if (parameterMatch)
+                    if (parameterMatch) {
                         return m;
+                    } else {
+                        throw new FaultToleranceDefinitionException("FallbackMethod on @Fallback should have " +
+                                "the same parameter types as intercepted target method.");
+                    }
                 }
             }
         }
