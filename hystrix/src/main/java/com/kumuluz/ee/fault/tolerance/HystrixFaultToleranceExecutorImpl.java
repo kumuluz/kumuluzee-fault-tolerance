@@ -40,7 +40,6 @@ import com.netflix.hystrix.exception.HystrixBadRequestException;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
-import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceException;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.jboss.weld.context.RequestContext;
 
@@ -92,49 +91,45 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         if (metadata.getRetry() == null) {
             return executeWithHystrix(hystrixCommand, invocationContext, requestContext, metadata);
         } else {
-            return executeWithRetry(hystrixCommand, invocationContext, requestContext, metadata);
+            return executeWithRetry(hystrixCommand, invocationContext, requestContext, metadata,
+                    null, 1);
         }
     }
 
     private Object executeWithRetry(HystrixCommand.Setter hystrixCommand, InvocationContext invocationContext,
-                                    RequestContext requestContext, ExecutionMetadata metadata) throws Exception {
+                                    RequestContext requestContext, ExecutionMetadata metadata,
+                                    RetryConfig retryConfig, int execCnt) throws Exception {
 
-        RetryConfig retryConfig = retryManager.getRetryConfig(metadata.getCommandKey());
-        Throwable failureCause = null;
-        boolean infinite = retryConfig.getMaxRetries() == -1;
-        int execCnt = 1;
+        if (retryConfig == null)
+            retryConfig = retryManager.getRetryConfig(metadata.getCommandKey());
 
-        while (infinite || execCnt <= retryConfig.getMaxRetries()) {
-            boolean doRetry, doAbort;
+        if (execCnt > 1)
+            log.info("Retry attempt #" + execCnt + " to execute command '" + metadata.getCommandKey() + ".");
 
-            if (execCnt > 1) {
+        try {
+            return executeWithHystrix(hystrixCommand, invocationContext, requestContext, metadata);
+        } catch (Exception e) {
+            boolean doRetryOn = Arrays.stream(retryConfig.getRetryOn()).anyMatch(ro -> ro.isInstance(e));
+            boolean doAbortOn = Arrays.stream(retryConfig.getAbortOn()).anyMatch(ao -> ao.isInstance(e));
+
+            if (!doAbortOn && doRetryOn && (retryConfig.getMaxRetries() == -1 ||
+                    execCnt < retryConfig.getMaxRetries())) {
+                // retry is allowed, execute after delay and jitter
                 long jitter = (long)(Math.random() * retryConfig.getJitterInMillis() * 2) -
                         retryConfig.getJitterInMillis();
 
                 TimeUnit.MILLISECONDS.sleep(retryConfig.getDelayInMillis() + jitter);
+
+                return executeWithRetry(hystrixCommand, invocationContext, requestContext, metadata,
+                        retryConfig, execCnt + 1);
+            } else if (metadata.getFallbackHandlerClass() != null || metadata.getFallbackMethod() != null) {
+                // retry is not allowed, fallback is set and can be executed
+                return FallbackHelper.executeFallback(e, metadata, invocationContext, null);
+            } else {
+                // retry is not allowed, fallback is not set
+                throw e;
             }
-
-            try {
-                log.finest("Executing command '" + metadata.getCommandKey() + "' with execution #" + execCnt + ".");
-
-                return executeWithHystrix(hystrixCommand, invocationContext, requestContext, metadata);
-            } catch (Throwable e) {
-                doRetry = Arrays.stream(retryConfig.getRetryOn()).anyMatch(ro -> ro.isInstance(e));
-                doAbort = Arrays.stream(retryConfig.getAbortOn()).anyMatch(ao -> ao.isInstance(e));
-
-                if (doAbort || !doRetry) {
-                    failureCause = e;
-                    break;
-                }
-            }
-
-            execCnt++;
         }
-
-        if (metadata.getFallbackHandlerClass() != null || metadata.getFallbackMethod() != null)
-            return FallbackHelper.executeFallback(failureCause, metadata, invocationContext, null);
-        else
-            throw new FaultToleranceException("Retry execution failed", failureCause);
     }
 
     private Object executeWithHystrix(HystrixCommand.Setter hystrixCommand, InvocationContext invocationContext,
