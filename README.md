@@ -1,9 +1,9 @@
 # KumuluzEE Fault Tolerance
 [![Build Status](https://img.shields.io/travis/kumuluz/kumuluzee-fault-tolerance/master.svg?style=flat)](https://travis-ci.org/kumuluz/kumuluzee-fault-tolerance)
 
-> KumuluzEE Fault Tolerance extension for the Kumuluz EE microservice framework. 
+> KumuluzEE Fault Tolerance project for the Kumuluz EE microservice framework. 
 
-KumuluzEE Fault Tolerance is a fault tolerance extension for the KumuluzEE microservice framework. It provides support 
+KumuluzEE Fault Tolerance is a fault tolerance project for the KumuluzEE microservice framework. It provides support 
 for fault tolerance and latency tolerance with circuit breaker, bulkhead, timeout, retry and fallback patterns. 
 KumuluzEE Fault Tolerance supports basic fault tolerance configuration using annotations. Additionaly, 
 configuring via KumuluzEE Config is supported. 
@@ -71,7 +71,7 @@ public class CustomersBean {
 
 KumuluzEE Fault Tolerance can be configured via KumuluzEE Config. To learn more about KumuluzEE Config please visit 
 [KumuluzEE Config wiki page](https://github.com/kumuluz/kumuluzee/wiki/Configuration) and the 
-[KumuluzEE Config extension](https://github.com/kumuluz/kumuluzee-config).
+[KumuluzEE Config project](https://github.com/kumuluz/kumuluzee-config).
 
 Fault tolerance command-specific properties are applied only to command under specified group and command key.
 They can be set using key format: 
