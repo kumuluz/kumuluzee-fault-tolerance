@@ -31,8 +31,12 @@
 
         <microprofile-faulttolerance.version>1.0</microprofile-faulttolerance.version>
 
+        <testng.version>6.9.9</testng.version>
+        <kumuluzee-arquillian-container.version>1.0.0-SNAPSHOT</kumuluzee-arquillian-container.version>
+
         <nexus.staging.plugin.version>1.6.8</nexus.staging.plugin.version>
         <gpg.plugin.version>1.6</gpg.plugin.version>
+        <surefire.plugin.version>2.20.1</surefire.plugin.version>
     </properties>
 
     <scm>
@@ -98,6 +102,12 @@
     </dependencyManagement>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
