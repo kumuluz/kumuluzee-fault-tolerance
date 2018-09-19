@@ -118,15 +118,16 @@ public class RetryConfigurationManager {
                     metadata.getRetry().jitterDelayUnit()).toMillis());
         }
 
-        retryConfigs.put(metadata.getCommandKey(), retryConfig);
+        retryConfigs.put(metadata.getIdentifier(), retryConfig);
     }
 
     public void setRetryConfig(ConfigurationProperty property, Object value) {
 
-        if (property.getType() != FaultToleranceType.RETRY || !retryConfigs.containsKey(property.getCommandKey()))
+        if (property.getType() != FaultToleranceType.RETRY ||
+                !retryConfigs.containsKey(property.getIdentifier()))
             return;
 
-        RetryConfig retryConfig = retryConfigs.get(property.getCommandKey());
+        RetryConfig retryConfig = retryConfigs.get(property.getIdentifier());
 
         switch (property.getPropertyPath()) {
             case "max-retries":

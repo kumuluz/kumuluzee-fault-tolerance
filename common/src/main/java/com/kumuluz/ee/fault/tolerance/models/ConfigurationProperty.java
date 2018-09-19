@@ -74,6 +74,10 @@ public class ConfigurationProperty {
         groupSpecific = false;
     }
 
+    public String getIdentifier() {
+        return this.groupKey + "." + this.commandKey;
+    }
+
     public String getCommandKey() {
         return commandKey;
     }

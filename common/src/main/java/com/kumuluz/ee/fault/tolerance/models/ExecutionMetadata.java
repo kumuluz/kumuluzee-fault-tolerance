@@ -53,6 +53,10 @@ public class ExecutionMetadata {
         this.groupKey = groupKey;
     }
 
+    public String getIdentifier() {
+        return this.groupKey + "." + this.commandKey;
+    }
+
     public Class getTargetClass() {
         return targetClass;
     }

@@ -47,7 +47,7 @@ public class FallbackHelper {
                                          RequestContext rc) throws Exception {
 
         if (cause != null) {
-            log.finest("Callback for command '" + metadata.getCommandKey() + "' fired by " +
+            log.finest("Callback for command '" + metadata.getIdentifier() + "' fired by " +
                     cause.getClass().getName());
         }
 

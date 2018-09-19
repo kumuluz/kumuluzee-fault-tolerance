@@ -46,6 +46,8 @@ import org.jboss.weld.context.RequestContext;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.interceptor.InvocationContext;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
@@ -92,19 +94,23 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
             return executeWithHystrix(hystrixCommand, invocationContext, requestContext, metadata);
         } else {
             return executeWithRetry(hystrixCommand, invocationContext, requestContext, metadata,
-                    null, 1);
+                    null, 1, null);
         }
     }
 
     private Object executeWithRetry(HystrixCommand.Setter hystrixCommand, InvocationContext invocationContext,
                                     RequestContext requestContext, ExecutionMetadata metadata,
-                                    RetryConfig retryConfig, int execCnt) throws Exception {
+                                    RetryConfig retryConfig, int execCnt, Instant executionStart) throws Exception {
 
         if (retryConfig == null)
-            retryConfig = retryManager.getRetryConfig(metadata.getCommandKey());
+            retryConfig = retryManager.getRetryConfig(metadata.getGroupKey() + "." + metadata.getCommandKey());
 
         if (execCnt > 1)
             log.info("Retry attempt #" + execCnt + " to execute command '" + metadata.getCommandKey() + ".");
+
+        if (executionStart == null) {
+            executionStart = Instant.now();
+        }
 
         try {
             return executeWithHystrix(hystrixCommand, invocationContext, requestContext, metadata);
@@ -112,8 +118,12 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
             boolean doRetryOn = Arrays.stream(retryConfig.getRetryOn()).anyMatch(ro -> ro.isInstance(e));
             boolean doAbortOn = Arrays.stream(retryConfig.getAbortOn()).anyMatch(ao -> ao.isInstance(e));
 
-            if (!doAbortOn && doRetryOn && (retryConfig.getMaxRetries() == -1 ||
-                    execCnt < retryConfig.getMaxRetries())) {
+            boolean maxDurationExceeded = executionStart
+                    .plus(Duration.of(metadata.getRetry().maxDuration(), metadata.getRetry().durationUnit()))
+                    .isBefore(Instant.now());
+
+            if (!doAbortOn && doRetryOn && !maxDurationExceeded &&
+                    (retryConfig.getMaxRetries() == -1 || execCnt < retryConfig.getMaxRetries() + 1)) {
                 // retry is allowed, execute after delay and jitter
                 long jitter = (long)(Math.random() * retryConfig.getJitterInMillis() * 2) -
                         retryConfig.getJitterInMillis();
@@ -121,7 +131,7 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
                 TimeUnit.MILLISECONDS.sleep(retryConfig.getDelayInMillis() + jitter);
 
                 return executeWithRetry(hystrixCommand, invocationContext, requestContext, metadata,
-                        retryConfig, execCnt + 1);
+                        retryConfig, execCnt + 1, executionStart);
             } else if (metadata.getFallbackHandlerClass() != null || metadata.getFallbackMethod() != null) {
                 // retry is not allowed, fallback is set and can be executed
                 return FallbackHelper.executeFallback(e, metadata, invocationContext, null);
@@ -179,7 +189,7 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
 
     private HystrixCommand.Setter getHystrixCommandSetter(ExecutionMetadata metadata) {
 
-        String key = metadata.getGroupKey() + "-" + metadata.getCommandKey();
+        String key = metadata.getIdentifier();
 
         if (hystrixCommandSetters.containsKey(key))
             return hystrixCommandSetters.get(key);
@@ -202,14 +212,12 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
 
     private HystrixCommandKey getHystrixCommandKey(ExecutionMetadata metadata) {
 
-        String key = metadata.getCommandKey();
+        if (hystrixCommandKeys.containsKey(metadata.getIdentifier()))
+            return hystrixCommandKeys.get(metadata.getIdentifier());
 
-        if (hystrixCommandKeys.containsKey(key))
-            return hystrixCommandKeys.get(key);
+        log.finest("Initializing Hystrix command key object for key '" + metadata.getIdentifier() + "'.");
 
-        log.finest("Initializing Hystrix command key object for key '" + key + "'.");
-
-        HystrixCommandKey commandKey = HystrixCommandKey.Factory.asKey(key);
+        HystrixCommandKey commandKey = HystrixCommandKey.Factory.asKey(metadata.getCommandKey());
 
         CommandHystrixConfigurationUtil chcUtil = new CommandHystrixConfigurationUtil(configManager);
         chcUtil.initialize(metadata);
@@ -217,7 +225,7 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         if (metadata.getRetry() != null)
             retryManager.initializeRetry(metadata);
 
-        hystrixCommandKeys.put(key, commandKey);
+        hystrixCommandKeys.put(metadata.getIdentifier(), commandKey);
 
         return commandKey;
     }
