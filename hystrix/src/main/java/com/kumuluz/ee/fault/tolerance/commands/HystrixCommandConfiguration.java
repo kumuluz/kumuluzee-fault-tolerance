@@ -18,29 +18,41 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance;
+package com.kumuluz.ee.fault.tolerance.commands;
 
-import com.netflix.hystrix.HystrixGenericCommand;
-import org.jboss.arquillian.container.test.spi.client.deployment.CachedAuxilliaryArchiveAppender;
-import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import com.netflix.hystrix.HystrixCommandGroupKey;
+import com.netflix.hystrix.HystrixCommandKey;
+import com.netflix.hystrix.HystrixThreadPoolKey;
 
 /**
- * Packages KumuluzEE Fault Tolerance library as a ShrinkWrap archive and adds it to deployments.
+ * Configuration for a Hystrix command.
  *
  * @author Urban Malc
  * @since 1.1.0
  */
-public class FaultToleranceLibraryAppender extends CachedAuxilliaryArchiveAppender {
+public class HystrixCommandConfiguration {
 
-    @Override
-    protected Archive<?> buildArchive() {
+    private HystrixCommandGroupKey groupKey;
+    private HystrixCommandKey commandKey;
+    private HystrixThreadPoolKey threadPoolKey;
 
-        return ShrinkWrap.create(JavaArchive.class, "kumuluzee-fault-tolerance.jar")
-                .addPackages(true, "com.kumuluz.ee.fault.tolerance")
-                .addClass(HystrixGenericCommand.class) // temporary, see class javadoc
-                .addAsServiceProvider(com.kumuluz.ee.common.Extension.class, HystrixFaultToleranceExtension.class)
-                .addAsResource("META-INF/beans.xml");
+    public HystrixCommandConfiguration(HystrixCommandGroupKey groupKey,
+                                       HystrixCommandKey commandKey,
+                                       HystrixThreadPoolKey threadPoolKey) {
+        this.groupKey = groupKey;
+        this.commandKey = commandKey;
+        this.threadPoolKey = threadPoolKey;
+    }
+
+    public HystrixCommandGroupKey getGroupKey() {
+        return groupKey;
+    }
+
+    public HystrixCommandKey getCommandKey() {
+        return commandKey;
+    }
+
+    public HystrixThreadPoolKey getThreadPoolKey() {
+        return threadPoolKey;
     }
 }

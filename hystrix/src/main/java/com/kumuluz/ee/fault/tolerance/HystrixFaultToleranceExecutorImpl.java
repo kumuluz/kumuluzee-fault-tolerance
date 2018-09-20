@@ -21,7 +21,7 @@
 package com.kumuluz.ee.fault.tolerance;
 
 import com.kumuluz.ee.fault.tolerance.commands.FallbackHelper;
-import com.kumuluz.ee.fault.tolerance.commands.HystrixGenericCommand;
+import com.kumuluz.ee.fault.tolerance.commands.HystrixCommandConfiguration;
 import com.kumuluz.ee.fault.tolerance.configurations.hystrix.CommandHystrixConfigurationUtil;
 import com.kumuluz.ee.fault.tolerance.configurations.hystrix.HystrixFaultToleranceConfigurationManager;
 import com.kumuluz.ee.fault.tolerance.configurations.hystrix.ThreadPoolHystrixConfigurationUtil;
@@ -31,10 +31,9 @@ import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceExecutor;
 import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
-import com.kumuluz.ee.fault.tolerance.utils.FaultToleranceUtilImpl;
-import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandKey;
+import com.netflix.hystrix.HystrixGenericCommand;
 import com.netflix.hystrix.HystrixThreadPoolKey;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
@@ -66,12 +65,9 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
 
     private static final Logger log = Logger.getLogger(HystrixFaultToleranceExecutorImpl.class.getName());
 
-    private static HashMap<String, HystrixCommand.Setter> hystrixCommandSetters = new HashMap<>();
+    private static HashMap<String, HystrixCommandConfiguration> hystrixCommandConfigurations = new HashMap<>();
     private static HashMap<String, HystrixCommandKey> hystrixCommandKeys = new HashMap<>();
     private static HashMap<String, HystrixThreadPoolKey> hystrixThreadPoolKeys = new HashMap<>();
-
-    @Inject
-    private FaultToleranceUtilImpl faultToleranceUtil;
 
     @Inject
     private HystrixFaultToleranceConfigurationManager configManager;
@@ -88,22 +84,22 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
     public Object execute(InvocationContext invocationContext, RequestContext requestContext,
                           ExecutionMetadata metadata) throws Exception {
 
-        HystrixCommand.Setter hystrixCommand = getHystrixCommandSetter(metadata);
+        HystrixCommandConfiguration hystrixCommandConfig = getHystrixCommandSetter(metadata);
 
         if (metadata.getRetry() == null) {
-            return executeWithHystrix(hystrixCommand, invocationContext, requestContext, metadata);
+            return executeWithHystrix(hystrixCommandConfig, invocationContext, requestContext, metadata);
         } else {
-            return executeWithRetry(hystrixCommand, invocationContext, requestContext, metadata,
+            return executeWithRetry(hystrixCommandConfig, invocationContext, requestContext, metadata,
                     null, 1, null);
         }
     }
 
-    private Object executeWithRetry(HystrixCommand.Setter hystrixCommand, InvocationContext invocationContext,
+    private Object executeWithRetry(HystrixCommandConfiguration hystrixCommand, InvocationContext invocationContext,
                                     RequestContext requestContext, ExecutionMetadata metadata,
                                     RetryConfig retryConfig, int execCnt, Instant executionStart) throws Exception {
 
         if (retryConfig == null)
-            retryConfig = retryManager.getRetryConfig(metadata.getGroupKey() + "." + metadata.getCommandKey());
+            retryConfig = retryManager.getRetryConfig(metadata.getIdentifier());
 
         if (execCnt > 1)
             log.info("Retry attempt #" + execCnt + " to execute command '" + metadata.getCommandKey() + ".");
@@ -142,7 +138,7 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         }
     }
 
-    private Object executeWithHystrix(HystrixCommand.Setter hystrixCommand, InvocationContext invocationContext,
+    private Object executeWithHystrix(HystrixCommandConfiguration hystrixCommand, InvocationContext invocationContext,
                                       RequestContext requestContext, ExecutionMetadata metadata) throws Exception {
 
         HystrixGenericCommand cmd = new HystrixGenericCommand(hystrixCommand, invocationContext, requestContext, metadata);
@@ -187,12 +183,12 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         return null;
     }
 
-    private HystrixCommand.Setter getHystrixCommandSetter(ExecutionMetadata metadata) {
+    private HystrixCommandConfiguration getHystrixCommandSetter(ExecutionMetadata metadata) {
 
         String key = metadata.getIdentifier();
 
-        if (hystrixCommandSetters.containsKey(key))
-            return hystrixCommandSetters.get(key);
+        if (hystrixCommandConfigurations.containsKey(key))
+            return hystrixCommandConfigurations.get(key);
 
         log.finest("Initializing Hystrix command setter for key '" + key + "'.");
 
@@ -200,14 +196,11 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         HystrixCommandGroupKey groupKey = getHystrixCommandGroupKey(metadata);
         HystrixThreadPoolKey threadPoolKey = getHystrixThreadPoolKey(metadata);
 
-        HystrixCommand.Setter setter = HystrixCommand.Setter
-                .withGroupKey(groupKey)
-                .andThreadPoolKey(threadPoolKey)
-                .andCommandKey(commandKey);
+        HystrixCommandConfiguration configuration = new HystrixCommandConfiguration(groupKey, commandKey, threadPoolKey);
 
-        hystrixCommandSetters.put(key, setter);
+        hystrixCommandConfigurations.put(key, configuration);
 
-        return setter;
+        return configuration;
     }
 
     private HystrixCommandKey getHystrixCommandKey(ExecutionMetadata metadata) {

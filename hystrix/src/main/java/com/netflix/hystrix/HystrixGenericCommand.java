@@ -18,20 +18,24 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.commands;
+package com.netflix.hystrix;
 
+import com.kumuluz.ee.fault.tolerance.commands.FallbackHelper;
+import com.kumuluz.ee.fault.tolerance.commands.HystrixCommandConfiguration;
+import com.kumuluz.ee.fault.tolerance.commands.SuccessThresholdCircuitBreaker;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 import com.netflix.config.ConfigurationManager;
-import com.netflix.hystrix.HystrixCommand;
-import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
+import com.netflix.hystrix.strategy.properties.HystrixPropertiesFactory;
 import org.jboss.weld.context.RequestContext;
 
 import javax.interceptor.InvocationContext;
 import java.util.logging.Logger;
 
 /**
- * Hystrix generic command for wrapping method execution in fault tolerance
+ * Hystrix generic command for wrapping method execution in fault tolerance.
+ *
+ * Temporarily moved to this package until Hystrix adds support for custom circuit breaker implementations.
  *
  * @author Luka Šarc
  * @since 1.0.0
@@ -46,9 +50,25 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
 
     private boolean threadExecution = false;
 
-    public HystrixGenericCommand(HystrixCommand.Setter setter, InvocationContext invocationContext, RequestContext requestContext, ExecutionMetadata metadata) {
+    public HystrixGenericCommand(HystrixCommandConfiguration configuration, InvocationContext invocationContext,
+                                 RequestContext requestContext, ExecutionMetadata metadata) {
 
-        super(setter);
+        super(configuration.getGroupKey(), configuration.getCommandKey(), configuration.getThreadPoolKey(),
+                SuccessThresholdCircuitBreaker.CustomCbFactory.getInstance(configuration.getCommandKey(),
+                        configuration.getGroupKey(),
+                        HystrixPropertiesFactory.getCommandProperties(configuration.getCommandKey(), null),
+                        HystrixCommandMetrics.getInstance(configuration.getCommandKey(), configuration.getGroupKey(),
+                                configuration.getThreadPoolKey(),
+                                HystrixPropertiesFactory.getCommandProperties(configuration.getCommandKey(),
+                                        null)), metadata.getCircuitBreakerSuccessThreshold()),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
 
         this.invocationContext = invocationContext;
         this.requestContext = requestContext;

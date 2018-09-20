@@ -8,9 +8,9 @@
             <!--</package>-->
         <!--</packages>-->
         <classes>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.RetryTest">
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.CircuitBreakerTest">
                 <!--<methods>-->
-                    <!--<include name="testRetryMaxRetries"/>-->
+                    <!--<include name="testClassLevelCircuitOverrideNoDelay"/>-->
                 <!--</methods>-->
             </class>
         </classes>

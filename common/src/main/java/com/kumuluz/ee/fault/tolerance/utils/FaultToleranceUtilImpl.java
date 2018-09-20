@@ -358,6 +358,10 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
         metadata.setRetry(retry);
         metadata.setCircuitBreaker(circuitBreaker);
 
+        if (circuitBreaker != null) {
+            metadata.setCircuitBreakerSuccessThreshold(circuitBreaker.successThreshold());
+        }
+
         metadatasMap.put(key, metadata);
 
         return metadata;

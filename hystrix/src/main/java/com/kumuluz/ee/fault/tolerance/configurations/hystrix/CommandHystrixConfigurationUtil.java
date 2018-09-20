@@ -62,7 +62,7 @@ public class CommandHystrixConfigurationUtil extends AbstractHystrixConfiguratio
         type = FaultToleranceType.CIRCUIT_BREAKER;
 
         if (cb != null) {
-            log.info("Initializing circuit breaker pattern for command '" + commandKey + "'.");
+            log.info("Initializing circuit breaker pattern for command '" + metadata.getIdentifier() + "'.");
 
             intializeProperty(commandKey, groupKey, type, "request-volume-threshold", cb.requestVolumeThreshold());
             intializeProperty(commandKey, groupKey, type, "failure-ratio", cb.failureRatio());

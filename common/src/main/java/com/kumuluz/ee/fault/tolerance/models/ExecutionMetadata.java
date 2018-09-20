@@ -46,6 +46,8 @@ public class ExecutionMetadata {
     private Retry retry;
     private CircuitBreaker circuitBreaker;
 
+    private Integer circuitBreakerSuccessThreshold;
+
     public ExecutionMetadata(Class targetClass, Method method, String commandKey, String groupKey) {
         this.targetClass = targetClass;
         this.method = method;
@@ -127,5 +129,13 @@ public class ExecutionMetadata {
 
     public void setCircuitBreaker(CircuitBreaker circuitBreaker) {
         this.circuitBreaker = circuitBreaker;
+    }
+
+    public Integer getCircuitBreakerSuccessThreshold() {
+        return circuitBreakerSuccessThreshold;
+    }
+
+    public void setCircuitBreakerSuccessThreshold(Integer circuitBreakerSuccessThreshold) {
+        this.circuitBreakerSuccessThreshold = circuitBreakerSuccessThreshold;
     }
 }
