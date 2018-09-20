@@ -41,7 +41,7 @@ public class DefaultFallbackExecutionContext implements ExecutionContext {
 
     @Override
     public Method getMethod() {
-        return null;
+        return method;
     }
 
     public void setParameters(Object[] parameters) {
@@ -50,6 +50,6 @@ public class DefaultFallbackExecutionContext implements ExecutionContext {
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return parameters;
     }
 }

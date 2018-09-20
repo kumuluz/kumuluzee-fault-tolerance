@@ -65,7 +65,7 @@ public class FallbackHelper {
                 FallbackHandler fallbackHandler = fallbackCdi.get();
 
                 DefaultFallbackExecutionContext executionContext = new DefaultFallbackExecutionContext();
-                executionContext.setMethod(metadata.getMethod());
+                executionContext.setMethod(ic.getMethod());
                 executionContext.setParameters(ic.getParameters());
 
                 Object response = fallbackHandler.handle(executionContext);

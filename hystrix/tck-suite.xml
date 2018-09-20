@@ -8,9 +8,9 @@
             <!--</package>-->
         <!--</packages>-->
         <classes>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.CircuitBreakerTest">
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.FallbackTest">
                 <!--<methods>-->
-                    <!--<include name="testClassLevelCircuitOverrideNoDelay"/>-->
+                    <!--<include name="testFallbackSuccess"/>-->
                 <!--</methods>-->
             </class>
         </classes>
