@@ -25,5 +25,10 @@
             <artifactId>kumuluzee-cdi-weld</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.kumuluz.ee.config</groupId>
+            <artifactId>kumuluzee-config-mp</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>

@@ -18,36 +18,17 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance;
+package com.kumuluz.ee.fault.tolerance.interfaces;
 
-import com.kumuluz.ee.testing.arquillian.spi.MavenDependencyAppender;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.Optional;
 
 /**
- * Adds required dependencies to the deployments.
+ * Interface that wraps Microprofile Config.
  *
  * @author Urban Malc
  * @since 1.1.0
  */
-public class DependencyAppender implements MavenDependencyAppender {
+public interface ConfigWrapper {
 
-    private static final ResourceBundle versionsBundle = ResourceBundle.getBundle("META-INF/kumuluzee/versions");
-
-    @Override
-    public List<String> addLibraries() {
-
-        List<String> libs = new ArrayList<>();
-
-        libs.add("org.eclipse.microprofile.fault-tolerance:microprofile-fault-tolerance-api:" +
-                versionsBundle.getString("microprofile-faulttolerance-version"));
-        libs.add("com.netflix.hystrix:hystrix-core:" +
-                versionsBundle.getString("hystrix-version"));
-        libs.add("com.kumuluz.ee.config:kumuluzee-config-mp:" +
-                versionsBundle.getString("kumuluzee-config-mp-version"));
-
-        return libs;
-    }
+    <T> Optional<T> getOptionalValue(String key, Class<T> tClass);
 }

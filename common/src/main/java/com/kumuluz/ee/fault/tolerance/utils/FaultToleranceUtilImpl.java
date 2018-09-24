@@ -24,6 +24,7 @@ import com.kumuluz.ee.configuration.ConfigurationListener;
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import com.kumuluz.ee.fault.tolerance.annotations.CommandKey;
 import com.kumuluz.ee.fault.tolerance.annotations.GroupKey;
+import com.kumuluz.ee.fault.tolerance.config.MicroprofileConfigUtil;
 import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceExecutor;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceUtil;
@@ -67,6 +68,9 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
     @Inject
     private FaultToleranceExecutor executor;
+
+    @Inject
+    private MicroprofileConfigUtil microprofileConfigUtil;
 
     @PostConstruct
     public void init() {
@@ -289,50 +293,48 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
         log.finest("Initializing execution metadata for key '" + key + "'.");
 
-        Asynchronous asynchronous = null;
         Bulkhead bulkhead = null;
         Timeout timeout = null;
         Fallback fallback = null;
         Retry retry = null;
         CircuitBreaker circuitBreaker = null;
 
+        boolean isAsync = false;
         // check for asynchronous annotation
         if (targetMethod.isAnnotationPresent(Asynchronous.class))
-            asynchronous = targetMethod.getAnnotation(Asynchronous.class);
+            isAsync = microprofileConfigUtil.isAnnotationEnabled(targetClass, targetMethod, Asynchronous.class);
         else if (targetClass.isAnnotationPresent(Asynchronous.class))
-            asynchronous = targetClass.getAnnotation(Asynchronous.class);
+            isAsync = microprofileConfigUtil.isAnnotationEnabled(targetClass, null, Asynchronous.class);
 
         // check for bulkhead annotation
         if (targetMethod.isAnnotationPresent(Bulkhead.class))
-            bulkhead = targetMethod.getAnnotation(Bulkhead.class);
+            bulkhead = microprofileConfigUtil.configOverriddenBulkhead(targetClass, targetMethod, targetMethod.getAnnotation(Bulkhead.class));
         else if (targetClass.isAnnotationPresent(Bulkhead.class))
-            bulkhead = targetClass.getAnnotation(Bulkhead.class);
+            bulkhead = microprofileConfigUtil.configOverriddenBulkhead(targetClass, null, targetClass.getAnnotation(Bulkhead.class));
 
         // check for timeout annotation
         if (targetMethod.isAnnotationPresent(Timeout.class))
-            timeout = targetMethod.getAnnotation(Timeout.class);
+            timeout = microprofileConfigUtil.configOverriddenTimeout(targetClass, targetMethod, targetMethod.getAnnotation(Timeout.class));
         else if (targetClass.isAnnotationPresent(Timeout.class))
-            timeout = targetClass.getAnnotation(Timeout.class);
+            timeout = microprofileConfigUtil.configOverriddenTimeout(targetClass, null, targetClass.getAnnotation(Timeout.class));
 
         // check for fallback annotation
         if (targetMethod.isAnnotationPresent(Fallback.class))
-            fallback = targetMethod.getAnnotation(Fallback.class);
+            fallback = microprofileConfigUtil.configOverriddenFallback(targetClass, targetMethod, targetMethod.getAnnotation(Fallback.class));
         else if (targetClass.isAnnotationPresent(Fallback.class))
-            fallback = targetClass.getAnnotation(Fallback.class);
+            fallback = microprofileConfigUtil.configOverriddenFallback(targetClass, null, targetClass.getAnnotation(Fallback.class));
 
         // check for retry annotation
         if (targetMethod.isAnnotationPresent(Retry.class))
-            retry = targetMethod.getAnnotation(Retry.class);
+            retry = microprofileConfigUtil.configOverriddenRetry(targetClass, targetMethod, targetMethod.getAnnotation(Retry.class));
         else if (targetClass.isAnnotationPresent(Retry.class))
-            retry = targetClass.getAnnotation(Retry.class);
+            retry = microprofileConfigUtil.configOverriddenRetry(targetClass, null, targetClass.getAnnotation(Retry.class));
 
         // check for circuit breaker annotation
         if (targetMethod.isAnnotationPresent(CircuitBreaker.class))
-            circuitBreaker = targetMethod.getAnnotation(CircuitBreaker.class);
+            circuitBreaker = microprofileConfigUtil.configOverriddenCircuitBreaker(targetClass, targetMethod, targetMethod.getAnnotation(CircuitBreaker.class));
         else if (targetClass.isAnnotationPresent(CircuitBreaker.class))
-            circuitBreaker = targetClass.getAnnotation(CircuitBreaker.class);
-
-        boolean isAsync = asynchronous != null;
+            circuitBreaker = microprofileConfigUtil.configOverriddenCircuitBreaker(targetClass, null, targetClass.getAnnotation(CircuitBreaker.class));
 
         if (isAsync && !targetMethod.getReturnType().equals(Future.class)) {
             throw new FaultToleranceDefinitionException("If target method is annotated with @Asynchronous " +

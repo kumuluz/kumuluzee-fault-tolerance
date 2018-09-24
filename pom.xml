@@ -28,6 +28,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <kumuluzee.version>2.4.1</kumuluzee.version>
+        <kumuluzee-config-mp.version>1.2.1</kumuluzee-config-mp.version>
 
         <microprofile-faulttolerance.version>1.0</microprofile-faulttolerance.version>
 
@@ -92,6 +93,11 @@
                 <groupId>com.kumuluz.ee.fault.tolerance</groupId>
                 <artifactId>kumuluzee-fault-tolerance-common</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.kumuluz.ee.config</groupId>
+                <artifactId>kumuluzee-config-mp</artifactId>
+                <version>${kumuluzee-config-mp.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.fault-tolerance</groupId>

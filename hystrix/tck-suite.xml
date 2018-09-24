@@ -10,8 +10,7 @@
         <classes>
             <!--<class name="org.eclipse.microprofile.fault.tolerance.tck.disableEnv.DisableTest">-->
                 <!--&lt;!&ndash;<methods>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<include name="testBulkheadMethodSynchronousRetry55"/>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<include name="testNoRetriesBulkhead"/>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<include name="testClassLevelConfigMaxRetries"/>&ndash;&gt;-->
                 <!--&lt;!&ndash;</methods>&ndash;&gt;-->
             <!--</class>-->
             <class name="org.eclipse.microprofile.fault.tolerance.tck.CircuitBreakerRetryTest"/>
@@ -25,6 +24,8 @@
             <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadAsynchTest"/>
             <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadFutureTest"/>
             <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadSynchRetryTest"/>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.ConfigTest"/>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.disableEnv.DisableTest"/>
         </classes>
     </test>
 
