@@ -21,7 +21,7 @@
 package com.kumuluz.ee.fault.tolerance.interceptors;
 
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceUtil;
-import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.jboss.weld.context.RequestContext;
 import org.jboss.weld.context.unbound.Unbound;
 
@@ -37,7 +37,7 @@ import javax.interceptor.InvocationContext;
  * @author Luka Šarc
  * @since 1.0.0
  */
-@Timeout
+@Bulkhead
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_AFTER + FaultToleranceInterceptorPriority.BULKHEAD)
 public class BulkheadInterceptor {

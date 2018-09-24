@@ -42,13 +42,15 @@ import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenExce
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.jboss.weld.context.RequestContext;
 
-import javax.enterprise.context.RequestScoped;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.interceptor.InvocationContext;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -58,7 +60,7 @@ import java.util.logging.Logger;
  * @author Luka Šarc
  * @since 1.0.0
  */
-@RequestScoped
+@ApplicationScoped
 public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor {
 
     private static final String NAME = "hystrix";
@@ -144,7 +146,49 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         HystrixGenericCommand cmd = new HystrixGenericCommand(hystrixCommand, invocationContext, requestContext, metadata);
 
         try {
-            return cmd.execute();
+            if (metadata.isAsynchronous()) {
+                Future queued = cmd.queue();
+                return new Future() {
+                    @Override
+                    public boolean cancel(boolean b) {
+                        return queued.cancel(b);
+                    }
+
+                    @Override
+                    public boolean isCancelled() {
+                        return queued.isCancelled();
+                    }
+
+                    @Override
+                    public boolean isDone() {
+                        return queued.isDone();
+                    }
+
+                    @Override
+                    public Object get() throws InterruptedException, ExecutionException {
+                        Object o = queued.get();
+
+                        if (o instanceof Future) {
+                            return ((Future) o).get();
+                        }
+
+                        return o;
+                    }
+
+                    @Override
+                    public Object get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+                        Object o = queued.get();
+
+                        if (o instanceof Future) {
+                            return ((Future) o).get(l, timeUnit);
+                        }
+
+                        return o;
+                    }
+                };
+            } else {
+                return cmd.execute();
+            }
         } catch (HystrixBadRequestException e) {
             throw (Exception) e.getCause();
         } catch (HystrixRuntimeException e) {

@@ -280,7 +280,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
         if (targetClassIsProxied(targetClass))
             targetClass = targetClass.getSuperclass();
 
-        String commandKey = getCommandKey(targetMethod);
+        String commandKey = getCommandKey(targetClass, targetMethod);
         String groupKey = getGroupKey(targetClass, targetMethod);
         String key = groupKey + "." + commandKey;
 
@@ -373,7 +373,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
      * @param targetMethod  Execution target method
      * @return              Command name
      */
-    private String getCommandKey(Method targetMethod) {
+    private String getCommandKey(Class<?> targetClass, Method targetMethod) {
 
         CommandKey annotKey = null;
 
@@ -383,7 +383,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
         if (annotKey != null && !annotKey.value().equals(""))
             return annotKey.value();
         else
-            return targetMethod.getName();
+            return targetClass.getSimpleName() + "-" + targetMethod.getName();
     }
 
     /**
