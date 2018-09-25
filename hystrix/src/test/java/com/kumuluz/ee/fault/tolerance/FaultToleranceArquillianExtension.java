@@ -20,12 +20,10 @@
  */
 package com.kumuluz.ee.fault.tolerance;
 
-import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
-import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveAppender;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 
 /**
- * Registers {@link FaultToleranceLibraryAppender} with the Arquillian.
+ * Registers {@link LifecycleObserver} with the Arquillian.
  *
  * @author Urban Malc
  * @since 1.1.0
@@ -34,7 +32,6 @@ public class FaultToleranceArquillianExtension implements LoadableExtension {
 
     @Override
     public void register(ExtensionBuilder extensionBuilder) {
-        extensionBuilder.service(AuxiliaryArchiveAppender.class, FaultToleranceLibraryAppender.class);
-        extensionBuilder.service(ApplicationArchiveProcessor.class, ArchiveProcessor.class);
+        extensionBuilder.observer(LifecycleObserver.class);
     }
 }

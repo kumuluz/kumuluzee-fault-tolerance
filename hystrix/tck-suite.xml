@@ -3,30 +3,9 @@
 <suite name="microprofile-fault-tolerance-TCK" verbose="2" configfailurepolicy="continue" >
 
     <test name="microprofile-fault-tolerance 1.0 TCK">
-        <!--<packages>-->
-            <!--<package name="org.eclipse.microprofile.fault.tolerance.tck.*">-->
-            <!--</package>-->
-        <!--</packages>-->
-        <classes>
-            <!--<class name="org.eclipse.microprofile.fault.tolerance.tck.disableEnv.DisableTest">-->
-                <!--&lt;!&ndash;<methods>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<include name="testClassLevelConfigMaxRetries"/>&ndash;&gt;-->
-                <!--&lt;!&ndash;</methods>&ndash;&gt;-->
-            <!--</class>-->
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.CircuitBreakerRetryTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.CircuitBreakerTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.FallbackTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.RetryConditionTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.RetryTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.RetryTimeoutTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadAsynchRetryTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadAsynchTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadFutureTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadSynchRetryTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.ConfigTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.disableEnv.DisableTest"/>
-        </classes>
+        <packages>
+            <package name="org.eclipse.microprofile.fault.tolerance.tck.*"/>
+        </packages>
     </test>
 
 </suite>
