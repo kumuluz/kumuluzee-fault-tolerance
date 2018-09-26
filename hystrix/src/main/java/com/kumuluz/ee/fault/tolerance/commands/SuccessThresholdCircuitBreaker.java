@@ -174,7 +174,7 @@ public class SuccessThresholdCircuitBreaker implements HystrixCircuitBreaker {
                                                         HystrixCommandProperties properties,
                                                         HystrixCommandMetrics metrics,
                                                         ExecutionMetadata metadata) {
-            String mapKey = group.name() + "." + key.name();
+            String mapKey = key.name();
             // this should find it for all but the first time
             HystrixCircuitBreaker previouslyCached = circuitBreakersByCommand.get(mapKey);
             if (previouslyCached != null) {
