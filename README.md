@@ -40,8 +40,8 @@ we will add additional usage possibilities.
 ### Fault Tolerance basic configuration
 
 All fault tolerance executions are executed as a commands withing groups. Each command and group is identified with key.
-By default, method name is used as a key for command and class name is used as a key for group. Default settings can
-be overriden with `@CommandKey` and `@GroupKey` annotations.
+By default, `<class_name>-<method_name>` is used as a key for command and `<class_name>` is used as a key for group.
+Default settings can be overridden with `@CommandKey` and `@GroupKey` annotations.
 
 KumuluzEE Fault Tolerance properties can be configured using annotations and/or KumuluzEE Config.
 
