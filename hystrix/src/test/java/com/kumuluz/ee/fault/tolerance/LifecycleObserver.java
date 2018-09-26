@@ -21,7 +21,7 @@
 package com.kumuluz.ee.fault.tolerance;
 
 import com.kumuluz.ee.fault.tolerance.utils.DeploymentValidator;
-import com.netflix.hystrix.HystrixGenericCommand;
+import com.netflix.hystrix.KumuluzHystrixGenericCommand;
 import org.jboss.arquillian.container.spi.event.container.BeforeDeploy;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.TestClass;
@@ -46,7 +46,7 @@ public class LifecycleObserver {
 
         return ShrinkWrap.create(JavaArchive.class, "kumuluzee-fault-tolerance.jar")
                 .addPackages(true, "com.kumuluz.ee.fault.tolerance")
-                .addClass(HystrixGenericCommand.class) // temporary, see class javadoc
+                .addClass(KumuluzHystrixGenericCommand.class) // temporary, see class javadoc
                 .addAsServiceProvider(com.kumuluz.ee.common.Extension.class, HystrixFaultToleranceExtension.class)
                 .addAsServiceProvider(javax.enterprise.inject.spi.Extension.class, DeploymentValidator.class)
                 .addAsResource("META-INF/beans.xml");

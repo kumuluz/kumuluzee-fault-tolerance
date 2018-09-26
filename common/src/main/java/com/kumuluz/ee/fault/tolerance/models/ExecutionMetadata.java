@@ -20,6 +20,7 @@
  */
 package com.kumuluz.ee.fault.tolerance.models;
 
+import com.kumuluz.ee.fault.tolerance.enums.CircuitBreakerType;
 import org.eclipse.microprofile.faulttolerance.*;
 
 import java.lang.reflect.Method;
@@ -47,6 +48,7 @@ public class ExecutionMetadata {
     private CircuitBreaker circuitBreaker;
 
     private Integer circuitBreakerSuccessThreshold;
+    private CircuitBreakerType circuitBreakerType;
 
     public ExecutionMetadata(Class targetClass, Method method, String commandKey, String groupKey) {
         this.targetClass = targetClass;
@@ -137,5 +139,13 @@ public class ExecutionMetadata {
 
     public void setCircuitBreakerSuccessThreshold(Integer circuitBreakerSuccessThreshold) {
         this.circuitBreakerSuccessThreshold = circuitBreakerSuccessThreshold;
+    }
+
+    public CircuitBreakerType getCircuitBreakerType() {
+        return circuitBreakerType;
+    }
+
+    public void setCircuitBreakerType(CircuitBreakerType circuitBreakerType) {
+        this.circuitBreakerType = circuitBreakerType;
     }
 }

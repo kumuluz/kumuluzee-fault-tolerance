@@ -40,9 +40,9 @@ import java.util.logging.Logger;
  * @author Luka Šarc
  * @since 1.0.0
  */
-public class HystrixGenericCommand extends HystrixCommand<Object> {
+public class KumuluzHystrixGenericCommand extends HystrixCommand<Object> {
 
-    private static final Logger log = Logger.getLogger(HystrixGenericCommand.class.getName());
+    private static final Logger log = Logger.getLogger(KumuluzHystrixGenericCommand.class.getName());
 
     private final InvocationContext invocationContext;
     private final RequestContext requestContext;
@@ -50,8 +50,8 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
 
     private boolean threadExecution = false;
 
-    public HystrixGenericCommand(HystrixCommandConfiguration configuration, InvocationContext invocationContext,
-                                 RequestContext requestContext, ExecutionMetadata metadata) {
+    public KumuluzHystrixGenericCommand(HystrixCommandConfiguration configuration, InvocationContext invocationContext,
+                                        RequestContext requestContext, ExecutionMetadata metadata) {
 
         super(configuration.getGroupKey(), configuration.getCommandKey(), configuration.getThreadPoolKey(),
                 SuccessThresholdCircuitBreaker.CustomCbFactory.getInstance(configuration.getCommandKey(),
@@ -60,7 +60,7 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
                         HystrixCommandMetrics.getInstance(configuration.getCommandKey(), configuration.getGroupKey(),
                                 configuration.getThreadPoolKey(),
                                 HystrixPropertiesFactory.getCommandProperties(configuration.getCommandKey(),
-                                        null)), metadata.getCircuitBreakerSuccessThreshold()),
+                                        null)), metadata),
                 null,
                 null,
                 null,
@@ -123,6 +123,10 @@ public class HystrixGenericCommand extends HystrixCommand<Object> {
     }
 
     private boolean isFallbackInvokeable(Throwable e) {
+
+        if (metadata.getCircuitBreaker() == null) {
+            return true;
+        }
 
         Class<? extends Throwable>[] failOn = metadata.getCircuitBreaker().failOn();
 

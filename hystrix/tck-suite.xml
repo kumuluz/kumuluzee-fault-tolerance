@@ -1,6 +1,6 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 
-<suite name="microprofile-fault-tolerance-TCK" verbose="2" configfailurepolicy="continue" >
+<suite name="microprofile-fault-tolerance-TCK" verbose="2">
 
     <test name="microprofile-fault-tolerance 1.0 TCK">
         <packages>

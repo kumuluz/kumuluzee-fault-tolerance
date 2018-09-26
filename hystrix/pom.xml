@@ -70,6 +70,10 @@
                     <suiteXmlFiles>
                         <suiteXmlFile>tck-suite.xml</suiteXmlFile>
                     </suiteXmlFiles>
+                    <trimStackTrace>false</trimStackTrace>
+                    <environmentVariables>
+                        <FAULTTOLERANCE_CIRCUITBREAKER_CIRCUITBREAKERTYPE>SUCCESS_THRESHOLD</FAULTTOLERANCE_CIRCUITBREAKER_CIRCUITBREAKERTYPE>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>

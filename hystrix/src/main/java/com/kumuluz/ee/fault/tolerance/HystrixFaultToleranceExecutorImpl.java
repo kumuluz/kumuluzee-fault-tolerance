@@ -33,7 +33,7 @@ import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandKey;
-import com.netflix.hystrix.HystrixGenericCommand;
+import com.netflix.hystrix.KumuluzHystrixGenericCommand;
 import com.netflix.hystrix.HystrixThreadPoolKey;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
@@ -143,7 +143,8 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
     private Object executeWithHystrix(HystrixCommandConfiguration hystrixCommand, InvocationContext invocationContext,
                                       RequestContext requestContext, ExecutionMetadata metadata) throws Exception {
 
-        HystrixGenericCommand cmd = new HystrixGenericCommand(hystrixCommand, invocationContext, requestContext, metadata);
+        KumuluzHystrixGenericCommand cmd = new KumuluzHystrixGenericCommand(hystrixCommand, invocationContext,
+                requestContext, metadata);
 
         try {
             if (metadata.isAsynchronous()) {
