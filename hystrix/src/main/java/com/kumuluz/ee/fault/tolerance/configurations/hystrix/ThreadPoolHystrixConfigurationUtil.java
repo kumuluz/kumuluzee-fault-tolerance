@@ -51,6 +51,7 @@ public class ThreadPoolHystrixConfigurationUtil extends AbstractHystrixConfigura
 
         intializeProperty(key, FaultToleranceType.BULKHEAD, "value", metadata.getBulkhead().value());
         intializeProperty(key, FaultToleranceType.BULKHEAD, "waiting-task-queue", metadata.getBulkhead().waitingTaskQueue());
+        intializeProperty(key, FaultToleranceType.BULKHEAD, "waiting-task-queue-rejection", metadata.getBulkhead().waitingTaskQueue());
         intializeProperty(key, FaultToleranceType.BULKHEAD, "metrics.rolling-window.size", null);
         intializeProperty(key, FaultToleranceType.BULKHEAD, "metrics.rolling-window.buckets", null);
         intializeProperty(key, FaultToleranceType.BULKHEAD, "keep-alive", null);
@@ -127,6 +128,8 @@ public class ThreadPoolHystrixConfigurationUtil extends AbstractHystrixConfigura
                 return changeable ? "maximumSize" : "coreSize";
             case "bulkhead.waiting-task-queue":
                 return changeable ? "queueSizeRejectionThreshold" : "maxQueueSize";
+            case "bulkhead.waiting-task-queue-rejection":
+                return "queueSizeRejectionThreshold";
             case "bulkhead.value-change-enabled":
                 return changeable ? null : "allowMaximumSizeToDivergeFromCoreSize";
             case "bulkhead.metrics.rolling-window.size":

@@ -18,38 +18,22 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.models;
+package com.kumuluz.ee.fault.tolerance.config;
 
-import org.eclipse.microprofile.faulttolerance.ExecutionContext;
+import com.kumuluz.ee.fault.tolerance.interfaces.ConfigWrapper;
 
-import java.lang.reflect.Method;
+import java.util.Optional;
 
 /**
- * Default ExecutionContext implementation for fallback
+ * No-op implementation of {@link ConfigWrapper}. Used when Microprofile Config is not found on the classpath.
  *
- * @author Luka Šarc
- * @since 1.0.0
+ * @author Urban Malc
+ * @since 1.1.0
  */
-public class DefaultFallbackExecutionContext implements ExecutionContext {
-
-    private Method method;
-    private Object[] parameters;
-
-    public void setMethod(Method method) {
-        this.method = method;
-    }
+public class NoopConfig implements ConfigWrapper {
 
     @Override
-    public Method getMethod() {
-        return method;
-    }
-
-    public void setParameters(Object[] parameters) {
-        this.parameters = parameters;
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return parameters;
+    public <T> Optional<T> getOptionalValue(String key, Class<T> tClass) {
+        return Optional.empty();
     }
 }

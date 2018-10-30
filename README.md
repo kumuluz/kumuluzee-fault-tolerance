@@ -1,7 +1,7 @@
 # KumuluzEE Fault Tolerance
 [![Build Status](https://img.shields.io/travis/kumuluz/kumuluzee-fault-tolerance/master.svg?style=flat)](https://travis-ci.org/kumuluz/kumuluzee-fault-tolerance)
 
-> KumuluzEE Fault Tolerance project for the Kumuluz EE microservice framework. 
+> KumuluzEE Fault Tolerance project for the KumuluzEE microservice framework. 
 
 KumuluzEE Fault Tolerance is a fault tolerance project for the KumuluzEE microservice framework. It provides support 
 for fault tolerance and latency tolerance with circuit breaker, bulkhead, timeout, retry and fallback patterns. 
@@ -40,8 +40,8 @@ we will add additional usage possibilities.
 ### Fault Tolerance basic configuration
 
 All fault tolerance executions are executed as a commands withing groups. Each command and group is identified with key.
-By default, method name is used as a key for command and class name is used as a key for group. Default settings can
-be overriden with `@CommandKey` and `@GroupKey` annotations.
+By default, `<class_name>-<method_name>` is used as a key for command and `<class_name>` is used as a key for group.
+Default settings can be overridden with `@CommandKey` and `@GroupKey` annotations.
 
 KumuluzEE Fault Tolerance properties can be configured using annotations and/or KumuluzEE Config.
 
@@ -174,6 +174,20 @@ Some additional Hystrix specific properties are available using the KumuluzEE Co
 - __interrupt.on-cancel__ - sets whether to interrupt the thread on cancelation when using thread execution.
 - __log.enabled__ - enables Hystrix request log.
  
+KumuluzEE Fault Tolerance supports two implementations of circuit breaker. The implementation can be selected using the
+KumuluzEE Config key:
+
+- __circuit-breaker-type__ - selects the circuit breaker implementation - can be `HYSTRIX` (default) or
+  `SUCCESS_THRESHOLD`.
+
+The default value (`HYSTRIX`) uses the Hystrix implementation of circuit breaker, which does not support the
+`successThreshold` parameter. It can also violate the `failureRatio` parameter, since it updates error percentage on a
+regular interval (configurable with `metrics.health-interval`) and not on every invocation. The alternative implementation
+(`SUCCESS_THRESHOLD`) supports the `successThreshold` parameter and always respects the `failureRatio` parameter since
+it calculates the error percentage before every invocation. However, this calculation can be inefficient in high
+throughput applications. We recommend the usage of the default value `HYSTRIX` implementation, since it offers higher
+scalability. The drawbacks of `HYSTRIX` implementation can be easily mitigated by properly tuning the configuration.
+
  #### Bulkhead pattern
  
  Bulkhead pattern is applied with `@Bulkhead` annotation. Bulkhead pattern is binded to group and NOT to commands as other

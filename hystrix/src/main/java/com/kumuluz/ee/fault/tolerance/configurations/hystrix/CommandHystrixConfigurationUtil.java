@@ -62,7 +62,7 @@ public class CommandHystrixConfigurationUtil extends AbstractHystrixConfiguratio
         type = FaultToleranceType.CIRCUIT_BREAKER;
 
         if (cb != null) {
-            log.info("Initializing circuit breaker pattern for command '" + commandKey + "'.");
+            log.info("Initializing circuit breaker pattern for command '" + metadata.getIdentifier() + "'.");
 
             intializeProperty(commandKey, groupKey, type, "request-volume-threshold", cb.requestVolumeThreshold());
             intializeProperty(commandKey, groupKey, type, "failure-ratio", cb.failureRatio());
@@ -105,7 +105,7 @@ public class CommandHystrixConfigurationUtil extends AbstractHystrixConfiguratio
         if (bulkhead != null && !metadata.isAsynchronous()) {
             log.info("Initializing semaphored bulkhead pattern for command '" + commandKey + "'.");
 
-            intializeProperty(commandKey, groupKey, type, "bulkhead.value", bulkhead.value());
+            intializeProperty(commandKey, groupKey, type, "value", bulkhead.value());
         }
 
         Timeout timeout = metadata.getTimeout();
@@ -145,7 +145,7 @@ public class CommandHystrixConfigurationUtil extends AbstractHystrixConfiguratio
 
         switch (property.typeConfigurationPath()) {
             case "asynchronous.value":
-                return changeable ? null : "execution.isolation.strategy";
+                return "execution.isolation.strategy";
             case "bulkhead.value":
                 return "execution.isolation.semaphore.maxConcurrentRequests";
             case "circuit-breaker.enabled":

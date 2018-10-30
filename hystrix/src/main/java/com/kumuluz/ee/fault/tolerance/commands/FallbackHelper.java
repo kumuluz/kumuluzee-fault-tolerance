@@ -47,7 +47,7 @@ public class FallbackHelper {
                                          RequestContext rc) throws Exception {
 
         if (cause != null) {
-            log.finest("Callback for command '" + metadata.getCommandKey() + "' fired by " +
+            log.finest("Callback for command '" + metadata.getIdentifier() + "' fired by " +
                     cause.getClass().getName());
         }
 
@@ -65,7 +65,7 @@ public class FallbackHelper {
                 FallbackHandler fallbackHandler = fallbackCdi.get();
 
                 DefaultFallbackExecutionContext executionContext = new DefaultFallbackExecutionContext();
-                executionContext.setMethod(metadata.getMethod());
+                executionContext.setMethod(ic.getMethod());
                 executionContext.setParameters(ic.getParameters());
 
                 Object response = fallbackHandler.handle(executionContext);

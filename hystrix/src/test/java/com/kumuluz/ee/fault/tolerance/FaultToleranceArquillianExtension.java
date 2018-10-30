@@ -18,38 +18,20 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.models;
+package com.kumuluz.ee.fault.tolerance;
 
-import org.eclipse.microprofile.faulttolerance.ExecutionContext;
-
-import java.lang.reflect.Method;
+import org.jboss.arquillian.core.spi.LoadableExtension;
 
 /**
- * Default ExecutionContext implementation for fallback
+ * Registers {@link LifecycleObserver} with the Arquillian.
  *
- * @author Luka Šarc
- * @since 1.0.0
+ * @author Urban Malc
+ * @since 1.1.0
  */
-public class DefaultFallbackExecutionContext implements ExecutionContext {
-
-    private Method method;
-    private Object[] parameters;
-
-    public void setMethod(Method method) {
-        this.method = method;
-    }
+public class FaultToleranceArquillianExtension implements LoadableExtension {
 
     @Override
-    public Method getMethod() {
-        return method;
-    }
-
-    public void setParameters(Object[] parameters) {
-        this.parameters = parameters;
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return parameters;
+    public void register(ExtensionBuilder extensionBuilder) {
+        extensionBuilder.observer(LifecycleObserver.class);
     }
 }

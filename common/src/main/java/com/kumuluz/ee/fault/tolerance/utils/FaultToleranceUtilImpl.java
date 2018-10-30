@@ -24,6 +24,8 @@ import com.kumuluz.ee.configuration.ConfigurationListener;
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 import com.kumuluz.ee.fault.tolerance.annotations.CommandKey;
 import com.kumuluz.ee.fault.tolerance.annotations.GroupKey;
+import com.kumuluz.ee.fault.tolerance.config.MicroprofileConfigUtil;
+import com.kumuluz.ee.fault.tolerance.enums.CircuitBreakerType;
 import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceExecutor;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceUtil;
@@ -41,6 +43,7 @@ import javax.interceptor.InvocationContext;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -67,6 +70,9 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
     @Inject
     private FaultToleranceExecutor executor;
+
+    @Inject
+    private MicroprofileConfigUtil microprofileConfigUtil;
 
     @PostConstruct
     public void init() {
@@ -97,9 +103,10 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
     /**
      * Executes method intercepted by interceptor with executor
+     *
      * @param invocationContext Invocation context provided by interceptor
      * @param requestContext    Request context provided by interceptor
-     * @return                  Result of method execution
+     * @return Result of method execution
      * @throws Exception
      */
     @Override
@@ -114,8 +121,9 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
     /**
      * Checks if watch is enabled for property
-     * @param property  ConfigurationProperty object to check watch for
-     * @return          True if watch is enabled, false otherwise
+     *
+     * @param property ConfigurationProperty object to check watch for
+     * @return True if watch is enabled, false otherwise
      */
     @Override
     public boolean isWatchEnabled(ConfigurationProperty property) {
@@ -127,7 +135,8 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
     /**
      * Initiates watch for property if watch is enabled and not already set
-     * @param property  ConfigurationProperty object to initiate watch for
+     *
+     * @param property ConfigurationProperty object to initiate watch for
      */
     @Override
     public void watch(ConfigurationProperty property) {
@@ -180,7 +189,8 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
     /**
      * Removes watch for property
-     * @param property  ConfigurationProperty object to remove watch for
+     *
+     * @param property ConfigurationProperty object to remove watch for
      */
     @Override
     public void removeWatch(ConfigurationProperty property) {
@@ -200,7 +210,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
     public void updateConfigurations() {
 
         int cnt = 0;
-        while(updatePropertiesQueue.peek() != null && cnt < CONFIG_WATCH_QUEUE_UPDATE_LIMIT) {
+        while (updatePropertiesQueue.peek() != null && cnt < CONFIG_WATCH_QUEUE_UPDATE_LIMIT) {
             ConfigurationProperty prop = updatePropertiesQueue.poll();
             executor.setPropertyValue(prop);
             cnt++;
@@ -268,8 +278,9 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
     /**
      * Creates ExecutionMetadata object with execution info from invocation context or retreives it
      * from map if exists already
-     * @param ic    InvocationContext associated with the execution
-     * @return      ExecutionMetadata object with execution info
+     *
+     * @param ic InvocationContext associated with the execution
+     * @return ExecutionMetadata object with execution info
      */
     public ExecutionMetadata toExecutionMetadata(InvocationContext ic) {
 
@@ -280,7 +291,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
         if (targetClassIsProxied(targetClass))
             targetClass = targetClass.getSuperclass();
 
-        String commandKey = getCommandKey(targetMethod);
+        String commandKey = getCommandKey(targetClass, targetMethod);
         String groupKey = getGroupKey(targetClass, targetMethod);
         String key = groupKey + "." + commandKey;
 
@@ -289,50 +300,48 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
         log.finest("Initializing execution metadata for key '" + key + "'.");
 
-        Asynchronous asynchronous = null;
         Bulkhead bulkhead = null;
         Timeout timeout = null;
         Fallback fallback = null;
         Retry retry = null;
         CircuitBreaker circuitBreaker = null;
 
+        boolean isAsync = false;
         // check for asynchronous annotation
         if (targetMethod.isAnnotationPresent(Asynchronous.class))
-            asynchronous = targetMethod.getAnnotation(Asynchronous.class);
+            isAsync = microprofileConfigUtil.isAnnotationEnabled(targetClass, targetMethod, Asynchronous.class);
         else if (targetClass.isAnnotationPresent(Asynchronous.class))
-            asynchronous = targetClass.getAnnotation(Asynchronous.class);
+            isAsync = microprofileConfigUtil.isAnnotationEnabled(targetClass, null, Asynchronous.class);
 
         // check for bulkhead annotation
         if (targetMethod.isAnnotationPresent(Bulkhead.class))
-            bulkhead = targetMethod.getAnnotation(Bulkhead.class);
+            bulkhead = microprofileConfigUtil.configOverriddenBulkhead(targetClass, targetMethod, targetMethod.getAnnotation(Bulkhead.class));
         else if (targetClass.isAnnotationPresent(Bulkhead.class))
-            bulkhead = targetClass.getAnnotation(Bulkhead.class);
+            bulkhead = microprofileConfigUtil.configOverriddenBulkhead(targetClass, null, targetClass.getAnnotation(Bulkhead.class));
 
         // check for timeout annotation
         if (targetMethod.isAnnotationPresent(Timeout.class))
-            timeout = targetMethod.getAnnotation(Timeout.class);
+            timeout = microprofileConfigUtil.configOverriddenTimeout(targetClass, targetMethod, targetMethod.getAnnotation(Timeout.class));
         else if (targetClass.isAnnotationPresent(Timeout.class))
-            timeout = targetClass.getAnnotation(Timeout.class);
+            timeout = microprofileConfigUtil.configOverriddenTimeout(targetClass, null, targetClass.getAnnotation(Timeout.class));
 
         // check for fallback annotation
         if (targetMethod.isAnnotationPresent(Fallback.class))
-            fallback = targetMethod.getAnnotation(Fallback.class);
+            fallback = microprofileConfigUtil.configOverriddenFallback(targetClass, targetMethod, targetMethod.getAnnotation(Fallback.class));
         else if (targetClass.isAnnotationPresent(Fallback.class))
-            fallback = targetClass.getAnnotation(Fallback.class);
+            fallback = microprofileConfigUtil.configOverriddenFallback(targetClass, null, targetClass.getAnnotation(Fallback.class));
 
         // check for retry annotation
         if (targetMethod.isAnnotationPresent(Retry.class))
-            retry = targetMethod.getAnnotation(Retry.class);
+            retry = microprofileConfigUtil.configOverriddenRetry(targetClass, targetMethod, targetMethod.getAnnotation(Retry.class));
         else if (targetClass.isAnnotationPresent(Retry.class))
-            retry = targetClass.getAnnotation(Retry.class);
+            retry = microprofileConfigUtil.configOverriddenRetry(targetClass, null, targetClass.getAnnotation(Retry.class));
 
         // check for circuit breaker annotation
         if (targetMethod.isAnnotationPresent(CircuitBreaker.class))
-            circuitBreaker = targetMethod.getAnnotation(CircuitBreaker.class);
+            circuitBreaker = microprofileConfigUtil.configOverriddenCircuitBreaker(targetClass, targetMethod, targetMethod.getAnnotation(CircuitBreaker.class));
         else if (targetClass.isAnnotationPresent(CircuitBreaker.class))
-            circuitBreaker = targetClass.getAnnotation(CircuitBreaker.class);
-
-        boolean isAsync = asynchronous != null;
+            circuitBreaker = microprofileConfigUtil.configOverriddenCircuitBreaker(targetClass, null, targetClass.getAnnotation(CircuitBreaker.class));
 
         if (isAsync && !targetMethod.getReturnType().equals(Future.class)) {
             throw new FaultToleranceDefinitionException("If target method is annotated with @Asynchronous " +
@@ -358,6 +367,26 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
         metadata.setRetry(retry);
         metadata.setCircuitBreaker(circuitBreaker);
 
+        if (circuitBreaker != null) {
+            metadata.setCircuitBreakerSuccessThreshold(circuitBreaker.successThreshold());
+            try {
+                metadata.setCircuitBreakerType(findConfig(
+                        commandKey,
+                        groupKey,
+                        FaultToleranceType.CIRCUIT_BREAKER,
+                        "circuit-breaker-type")
+                        .flatMap(cp -> ConfigurationUtil.getInstance().get(cp.configurationPath()))
+                        .flatMap(configVal -> Optional.of(CircuitBreakerType.valueOf(configVal.toUpperCase())))
+                        .orElse(CircuitBreakerType.HYSTRIX));
+            } catch (IllegalArgumentException e) {
+                log.log(Level.SEVERE, "Could not determice circuit breaker type from config, using HYSTRIX " +
+                        "circuit breaker.", e);
+                metadata.setCircuitBreakerType(CircuitBreakerType.HYSTRIX);
+            }
+        } else {
+            metadata.setCircuitBreakerType(CircuitBreakerType.HYSTRIX);
+        }
+
         metadatasMap.put(key, metadata);
 
         return metadata;
@@ -366,10 +395,11 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
     /**
      * Constructs command key. By default target method is used. If @CommandKey annotation is present,
      * it's value is used instead.
-     * @param targetMethod  Execution target method
-     * @return              Command name
+     *
+     * @param targetMethod Execution target method
+     * @return Command name
      */
-    private String getCommandKey(Method targetMethod) {
+    private String getCommandKey(Class<?> targetClass, Method targetMethod) {
 
         CommandKey annotKey = null;
 
@@ -379,16 +409,17 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
         if (annotKey != null && !annotKey.value().equals(""))
             return annotKey.value();
         else
-            return targetMethod.getName();
+            return targetClass.getSimpleName() + "-" + targetMethod.getName();
     }
 
     /**
      * Constructs group key. By default target class simple name is used. If @Bulkhead annotation is used on
      * target method, then target method name is set as group key. In case of @GroupKey annotation, it's value
      * is used as group key name instead of target class or method name.
-     * @param targetClass   Execution target class
-     * @param targetMethod  Execution target method
-     * @return              Group name
+     *
+     * @param targetClass  Execution target class
+     * @param targetMethod Execution target method
+     * @return Group name
      */
     private String getGroupKey(Class<?> targetClass, Method targetMethod) {
 
@@ -410,9 +441,10 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
     /**
      * Extracts fallback handler class if defined, checks if return type of handle method in FallbackHandler
      * implementation matches target method return type
-     * @param fallback      Fallback annotation associated with target method
-     * @param targetMethod  Execution target method
-     * @return              FallbackHandler implementation's class
+     *
+     * @param fallback     Fallback annotation associated with target method
+     * @param targetMethod Execution target method
+     * @return FallbackHandler implementation's class
      */
     private Class<? extends FallbackHandler> getFallbackHandlerClass(Fallback fallback, Method targetMethod) {
 
@@ -447,10 +479,11 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
     /**
      * Finds fallback method if defined using reflection, checks if fallback method matches return type and
      * parameter types with target method
-     * @param fallback      Fallback annotation associated with target method
-     * @param targetClass   Execution target class
-     * @param targetMethod  Execution target method
-     * @return              Fallback reflection Method object
+     *
+     * @param fallback     Fallback annotation associated with target method
+     * @param targetClass  Execution target class
+     * @param targetMethod Execution target method
+     * @return Fallback reflection Method object
      */
     private Method getFallbackMethod(Fallback fallback, Class targetClass, Method targetMethod) {
 
@@ -492,6 +525,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
     /**
      * Check if target class is proxied due to CDI use
+     *
      * @param targetClass
      * @return true if target class is proxied, false otherwise
      */
