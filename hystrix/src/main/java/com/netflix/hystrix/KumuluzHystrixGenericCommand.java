@@ -23,13 +23,20 @@ package com.netflix.hystrix;
 import com.kumuluz.ee.fault.tolerance.commands.FallbackHelper;
 import com.kumuluz.ee.fault.tolerance.commands.HystrixCommandConfiguration;
 import com.kumuluz.ee.fault.tolerance.commands.SuccessThresholdCircuitBreaker;
+import com.kumuluz.ee.fault.tolerance.metrics.BulkheadMetricsCollection;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
 import com.netflix.hystrix.strategy.properties.HystrixPropertiesFactory;
+import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
+import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceException;
 import org.jboss.weld.context.RequestContext;
 
 import javax.interceptor.InvocationContext;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 /**
@@ -48,6 +55,9 @@ public class KumuluzHystrixGenericCommand extends HystrixCommand<Object> {
     private final RequestContext requestContext;
     private final ExecutionMetadata metadata;
 
+    private final BulkheadMetricsCollection bulkheadMetricsCollection;
+    private Instant waitingStartTime;
+
     private boolean threadExecution = false;
 
     public KumuluzHystrixGenericCommand(HystrixCommandConfiguration configuration, InvocationContext invocationContext,
@@ -60,7 +70,9 @@ public class KumuluzHystrixGenericCommand extends HystrixCommand<Object> {
                         HystrixCommandMetrics.getInstance(configuration.getCommandKey(), configuration.getGroupKey(),
                                 configuration.getThreadPoolKey(),
                                 HystrixPropertiesFactory.getCommandProperties(configuration.getCommandKey(),
-                                        null)), metadata),
+                                        null)),
+                        metadata,
+                        metadata.getCbMetricsCollection(invocationContext.getMethod().getName()).orElse(null)),
                 null,
                 null,
                 null,
@@ -73,12 +85,29 @@ public class KumuluzHystrixGenericCommand extends HystrixCommand<Object> {
         this.invocationContext = invocationContext;
         this.requestContext = requestContext;
         this.metadata = metadata;
+
+        this.bulkheadMetricsCollection = metadata.getBulkheadMetricsCollection(invocationContext.getMethod().getName())
+                .orElse(null);
     }
 
     @Override
     protected Object run() throws Exception {
 
         log.finest("Executing command '" + metadata.getCommandKey() + "'.");
+
+        AtomicLong currentlyExecuting = null;
+        if (this.bulkheadMetricsCollection != null) {
+            bulkheadMetricsCollection.getCallsAccepted().inc();
+
+            currentlyExecuting = bulkheadMetricsCollection.getCurrentlyExecuting();
+            currentlyExecuting.incrementAndGet();
+
+            if (metadata.isAsynchronous()) {
+                bulkheadMetricsCollection.getCurrentlyWaiting().decrementAndGet();
+                bulkheadMetricsCollection.getWaitingDuration()
+                        .update(Duration.between(this.waitingStartTime, Instant.now()).toNanos());
+            }
+        }
 
         Object result;
         Object property = ConfigurationManager.getConfigInstance()
@@ -87,21 +116,32 @@ public class KumuluzHystrixGenericCommand extends HystrixCommand<Object> {
         boolean requestContextActivated = false;
         threadExecution = property == null || property == HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
 
+        Instant startTime = null;
+        Instant endTime = null;
         try {
             if (threadExecution && !requestContext.isActive()) {
                 requestContext.activate();
                 requestContextActivated = true;
             }
 
+            startTime = Instant.now();
             result = invocationContext.proceed();
+            endTime = Instant.now();
         } catch (Throwable e) {
-            if (isFallbackInvokeable(e))
+            if (isFallbackInvokeable(e) || e instanceof BulkheadException)
                 throw e;
 
             throw new HystrixBadRequestException(e.getMessage(), e);
         } finally {
             if (requestContextActivated && requestContext.isActive())
                 requestContext.deactivate();
+
+            if (currentlyExecuting != null) {
+                currentlyExecuting.decrementAndGet();
+            }
+            if (bulkheadMetricsCollection != null && startTime != null && endTime != null) {
+                bulkheadMetricsCollection.getExecutionDuration().update(Duration.between(startTime, endTime).toNanos());
+            }
         }
 
         return result;
@@ -118,8 +158,20 @@ public class KumuluzHystrixGenericCommand extends HystrixCommand<Object> {
             return FallbackHelper.executeFallback(executionException, metadata, invocationContext,
                     threadExecution ? requestContext : null);
         } catch (Exception e) {
-            return null;
+            if (e instanceof FaultToleranceException) {
+                throw (FaultToleranceException) e;
+            }
+            throw new FaultToleranceException(e);
         }
+    }
+
+    @Override
+    public Future<Object> queue() {
+        if (this.metadata.isAsynchronous() && this.bulkheadMetricsCollection != null) {
+            this.bulkheadMetricsCollection.getCurrentlyWaiting().incrementAndGet();
+            this.waitingStartTime = Instant.now();
+        }
+        return super.queue();
     }
 
     private boolean isFallbackInvokeable(Throwable e) {

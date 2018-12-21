@@ -21,6 +21,7 @@
 package com.kumuluz.ee.fault.tolerance;
 
 import com.kumuluz.ee.fault.tolerance.utils.DeploymentValidator;
+import com.kumuluz.ee.fault.tolerance.utils.FallbackBindingAnnotator;
 import com.netflix.hystrix.KumuluzHystrixGenericCommand;
 import org.jboss.arquillian.container.spi.event.container.BeforeDeploy;
 import org.jboss.arquillian.core.api.annotation.Observes;
@@ -48,7 +49,8 @@ public class LifecycleObserver {
                 .addPackages(true, "com.kumuluz.ee.fault.tolerance")
                 .addClass(KumuluzHystrixGenericCommand.class) // temporary, see class javadoc
                 .addAsServiceProvider(com.kumuluz.ee.common.Extension.class, HystrixFaultToleranceExtension.class)
-                .addAsServiceProvider(javax.enterprise.inject.spi.Extension.class, DeploymentValidator.class)
+                .addAsServiceProvider(javax.enterprise.inject.spi.Extension.class,
+                        DeploymentValidator.class, FallbackBindingAnnotator.class)
                 .addAsResource("META-INF/beans.xml");
     }
 }

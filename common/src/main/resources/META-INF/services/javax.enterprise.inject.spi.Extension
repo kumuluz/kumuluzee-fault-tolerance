@@ -1,1 +1,2 @@
 com.kumuluz.ee.fault.tolerance.utils.DeploymentValidator
+com.kumuluz.ee.fault.tolerance.utils.FallbackBindingAnnotator

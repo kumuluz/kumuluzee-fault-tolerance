@@ -18,36 +18,23 @@
  *  software. See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.kumuluz.ee.fault.tolerance.interceptors;
+package com.kumuluz.ee.fault.tolerance.annotations;
 
-import javax.interceptor.InvocationContext;
+import javax.interceptor.InterceptorBinding;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Interceptor for handling fault tolerance execution.
+ * Interceptor binding for {@link org.eclipse.microprofile.faulttolerance.Fallback} annotation. Added because the
+ * mentioned annotation does not support TYPE target.
  *
- * @author Luka Šarc
- * @since 1.0.0
+ * @author Urban Malc
+ * @since 1.1.0
  */
-public class FaultToleranceInterceptorPriority {
-
-    private static final String CONTEXT_DATA_EXECUTION_METADATA_KEY = "fault-tolerance-execution-interception";
-
-    public static final int TIMEOUT = 1;
-    public static final int CIRCUIT_BREAKER = 2;
-    public static final int BULKHEAD = 3;
-    public static final int RETRY = 4;
-    public static final int FALLBACK = 5;
-    public static final int ASYNCHRONOUS = 6;
-
-    public static boolean shouldExecute(InvocationContext ic) {
-
-        Boolean isExecuted = (Boolean) ic.getContextData().get(CONTEXT_DATA_EXECUTION_METADATA_KEY);
-
-        if (isExecuted != null && isExecuted)
-            return false;
-
-        ic.getContextData().put(CONTEXT_DATA_EXECUTION_METADATA_KEY, Boolean.TRUE);
-
-        return true;
-    }
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@InterceptorBinding
+public @interface FallbackBinding {
 }

@@ -54,6 +54,10 @@ public class MicroprofileConfigUtil {
                 .orElse(true);
     }
 
+    public ConfigWrapper getConfig() {
+        return config;
+    }
+
     public Bulkhead configOverriddenBulkhead(Class clazz, Method method, Bulkhead annotation) {
 
         if (annotation == null || !isAnnotationEnabled(clazz, method, Bulkhead.class)) {
@@ -261,9 +265,24 @@ public class MicroprofileConfigUtil {
     }
 
     public boolean isAnnotationEnabled(Class clazz, Method method, Class<? extends Annotation> annotation) {
-        Optional<Boolean> value = getConfigProperty(clazz, method, annotation, "enabled", Boolean.class);
+        Optional<Boolean> value = getConfigPropertyForEnabled(clazz, method, annotation);
 
         return value.orElse((annotation.equals(Fallback.class)) || this.nonFallbackEnabled);
+    }
+
+    private Optional<Boolean> getConfigPropertyForEnabled(Class clazz, Method method, Class<? extends Annotation> annotation) {
+        Optional<Boolean> value = Optional.empty();
+        if (method != null) {
+            value = config.getOptionalValue(getClassMethodKeyPrefix(clazz, method, annotation, "enabled"), Boolean.class);
+        }
+        if (!value.isPresent()) {
+            value = config.getOptionalValue(getClassKeyPrefix(clazz, annotation, "enabled"), Boolean.class);
+        }
+        if (!value.isPresent()) {
+            value = config.getOptionalValue(getKeyPrefix(annotation, "enabled"), Boolean.class);
+        }
+
+        return value;
     }
 
     private <T> Optional<T> getConfigProperty(Class clazz, Method method, Class<? extends Annotation> annotation, String propertyName, Class<T> tClass) {

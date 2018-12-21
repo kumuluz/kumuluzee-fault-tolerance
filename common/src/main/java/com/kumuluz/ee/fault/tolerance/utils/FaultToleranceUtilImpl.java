@@ -29,10 +29,12 @@ import com.kumuluz.ee.fault.tolerance.enums.CircuitBreakerType;
 import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceExecutor;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceUtil;
+import com.kumuluz.ee.fault.tolerance.metrics.*;
 import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 import org.eclipse.microprofile.faulttolerance.*;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.jboss.weld.context.RequestContext;
 
 import javax.annotation.PostConstruct;
@@ -73,6 +75,9 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
     @Inject
     private MicroprofileConfigUtil microprofileConfigUtil;
+
+    @Inject
+    private MetricsUtil metricsUtil;
 
     @PostConstruct
     public void init() {
@@ -282,7 +287,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
      * @param ic InvocationContext associated with the execution
      * @return ExecutionMetadata object with execution info
      */
-    public ExecutionMetadata toExecutionMetadata(InvocationContext ic) {
+    public synchronized ExecutionMetadata toExecutionMetadata(InvocationContext ic) {
 
         Method targetMethod = ic.getMethod();
         Object targetObject = ic.getTarget();
@@ -300,6 +305,9 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
         log.finest("Initializing execution metadata for key '" + key + "'.");
 
+        ExecutionMetadata metadata = new ExecutionMetadata(targetClass, targetMethod, commandKey, groupKey);
+        Optional<MetricRegistry> metricRegistry = metricsUtil.getRegistry();
+
         Bulkhead bulkhead = null;
         Timeout timeout = null;
         Fallback fallback = null;
@@ -308,40 +316,96 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
 
         boolean isAsync = false;
         // check for asynchronous annotation
-        if (targetMethod.isAnnotationPresent(Asynchronous.class))
+        if (targetMethod.isAnnotationPresent(Asynchronous.class)) {
             isAsync = microprofileConfigUtil.isAnnotationEnabled(targetClass, targetMethod, Asynchronous.class);
-        else if (targetClass.isAnnotationPresent(Asynchronous.class))
+        } else if (targetClass.isAnnotationPresent(Asynchronous.class)) {
             isAsync = microprofileConfigUtil.isAnnotationEnabled(targetClass, null, Asynchronous.class);
+        }
 
         // check for bulkhead annotation
-        if (targetMethod.isAnnotationPresent(Bulkhead.class))
+        if (targetMethod.isAnnotationPresent(Bulkhead.class)) {
             bulkhead = microprofileConfigUtil.configOverriddenBulkhead(targetClass, targetMethod, targetMethod.getAnnotation(Bulkhead.class));
-        else if (targetClass.isAnnotationPresent(Bulkhead.class))
+            if (metricRegistry.isPresent()) {
+                metadata.addCommonMetricsCollection(targetMethod, new CommonMetricsCollection(metricRegistry.get()));
+                metadata.addBulkheadMetricsCollection(targetMethod, new BulkheadMetricsCollection(metricRegistry.get(), isAsync));
+            }
+        } else if (targetClass.isAnnotationPresent(Bulkhead.class)) {
             bulkhead = microprofileConfigUtil.configOverriddenBulkhead(targetClass, null, targetClass.getAnnotation(Bulkhead.class));
+            if (metricRegistry.isPresent()) {
+                for (Method method : targetClass.getMethods()) {
+                    metadata.addCommonMetricsCollection(method, new CommonMetricsCollection(metricRegistry.get()));
+                    metadata.addBulkheadMetricsCollection(method, new BulkheadMetricsCollection(metricRegistry.get(), isAsync));
+                }
+            }
+        }
 
         // check for timeout annotation
-        if (targetMethod.isAnnotationPresent(Timeout.class))
+        if (targetMethod.isAnnotationPresent(Timeout.class)) {
             timeout = microprofileConfigUtil.configOverriddenTimeout(targetClass, targetMethod, targetMethod.getAnnotation(Timeout.class));
-        else if (targetClass.isAnnotationPresent(Timeout.class))
+            if (metricRegistry.isPresent()) {
+                metadata.addCommonMetricsCollection(targetMethod, new CommonMetricsCollection(metricRegistry.get()));
+                metadata.addTimeoutMetricsCollection(targetMethod, new TimeoutMetricsCollection(metricRegistry.get()));
+            }
+        } else if (targetClass.isAnnotationPresent(Timeout.class)) {
             timeout = microprofileConfigUtil.configOverriddenTimeout(targetClass, null, targetClass.getAnnotation(Timeout.class));
+            if (metricRegistry.isPresent()) {
+                for (Method method : targetClass.getMethods()) {
+                    metadata.addCommonMetricsCollection(method, new CommonMetricsCollection(metricRegistry.get()));
+                    metadata.addTimeoutMetricsCollection(method, new TimeoutMetricsCollection(metricRegistry.get()));
+                }
+            }
+        }
 
         // check for fallback annotation
-        if (targetMethod.isAnnotationPresent(Fallback.class))
+        if (targetMethod.isAnnotationPresent(Fallback.class)) {
             fallback = microprofileConfigUtil.configOverriddenFallback(targetClass, targetMethod, targetMethod.getAnnotation(Fallback.class));
-        else if (targetClass.isAnnotationPresent(Fallback.class))
+            if (metricRegistry.isPresent()) {
+                metadata.addCommonMetricsCollection(targetMethod, new CommonMetricsCollection(metricRegistry.get()));
+                metadata.addFallbackMetricsCollection(targetMethod, new FallbackMetricsCollection(metricRegistry.get()));
+            }
+        } else if (targetClass.isAnnotationPresent(Fallback.class)) {
             fallback = microprofileConfigUtil.configOverriddenFallback(targetClass, null, targetClass.getAnnotation(Fallback.class));
+            if (metricRegistry.isPresent()) {
+                for (Method method : targetClass.getMethods()) {
+                    metadata.addCommonMetricsCollection(method, new CommonMetricsCollection(metricRegistry.get()));
+                    metadata.addFallbackMetricsCollection(method, new FallbackMetricsCollection(metricRegistry.get()));
+                }
+            }
+        }
 
         // check for retry annotation
-        if (targetMethod.isAnnotationPresent(Retry.class))
+        if (targetMethod.isAnnotationPresent(Retry.class)) {
             retry = microprofileConfigUtil.configOverriddenRetry(targetClass, targetMethod, targetMethod.getAnnotation(Retry.class));
-        else if (targetClass.isAnnotationPresent(Retry.class))
+            if (metricRegistry.isPresent()) {
+                metadata.addCommonMetricsCollection(targetMethod, new CommonMetricsCollection(metricRegistry.get()));
+                metadata.addRetryMetricsCollection(targetMethod, new RetryMetricsCollection(metricRegistry.get()));
+            }
+        } else if (targetClass.isAnnotationPresent(Retry.class)) {
             retry = microprofileConfigUtil.configOverriddenRetry(targetClass, null, targetClass.getAnnotation(Retry.class));
+            if (metricRegistry.isPresent()) {
+                for (Method method : targetClass.getMethods()) {
+                    metadata.addCommonMetricsCollection(method, new CommonMetricsCollection(metricRegistry.get()));
+                    metadata.addRetryMetricsCollection(method, new RetryMetricsCollection(metricRegistry.get()));
+                }
+            }
+        }
 
         // check for circuit breaker annotation
-        if (targetMethod.isAnnotationPresent(CircuitBreaker.class))
+        if (targetMethod.isAnnotationPresent(CircuitBreaker.class)) {
             circuitBreaker = microprofileConfigUtil.configOverriddenCircuitBreaker(targetClass, targetMethod, targetMethod.getAnnotation(CircuitBreaker.class));
-        else if (targetClass.isAnnotationPresent(CircuitBreaker.class))
+            if (metricRegistry.isPresent()) {
+                metadata.addCommonMetricsCollection(targetMethod, new CommonMetricsCollection(metricRegistry.get()));
+                metadata.addCbMetricsCollection(targetMethod, new CircuitBreakerMetricsCollection(metricRegistry.get()));
+            }
+        } else if (targetClass.isAnnotationPresent(CircuitBreaker.class)) {
             circuitBreaker = microprofileConfigUtil.configOverriddenCircuitBreaker(targetClass, null, targetClass.getAnnotation(CircuitBreaker.class));
+            if (metricRegistry.isPresent()) {
+                for (Method method : targetClass.getMethods()) {
+                    metadata.addCommonMetricsCollection(method, new CommonMetricsCollection(metricRegistry.get()));
+                    metadata.addCbMetricsCollection(method, new CircuitBreakerMetricsCollection(metricRegistry.get()));
+                }
+            }
+        }
 
         if (isAsync && !targetMethod.getReturnType().equals(Future.class)) {
             throw new FaultToleranceDefinitionException("If target method is annotated with @Asynchronous " +
@@ -355,8 +419,6 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
             throw new FaultToleranceDefinitionException("When using @Fallback either fallbackHandler or " +
                     "fallbackeMethod should be provided, but not both");
         }
-
-        ExecutionMetadata metadata = new ExecutionMetadata(targetClass, targetMethod, commandKey, groupKey);
 
         metadata.setAsynchronous(isAsync);
         metadata.setFallbackHandlerClass(fallbackHandlerClass);
@@ -379,7 +441,7 @@ public class FaultToleranceUtilImpl implements FaultToleranceUtil {
                         .flatMap(configVal -> Optional.of(CircuitBreakerType.valueOf(configVal.toUpperCase())))
                         .orElse(CircuitBreakerType.HYSTRIX));
             } catch (IllegalArgumentException e) {
-                log.log(Level.SEVERE, "Could not determice circuit breaker type from config, using HYSTRIX " +
+                log.log(Level.SEVERE, "Could not determine circuit breaker type from config, using HYSTRIX " +
                         "circuit breaker.", e);
                 metadata.setCircuitBreakerType(CircuitBreakerType.HYSTRIX);
             }

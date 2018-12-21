@@ -8,5 +8,7 @@
         <class>com.kumuluz.ee.fault.tolerance.interceptors.CircuitBreakerInterceptor</class>
         <class>com.kumuluz.ee.fault.tolerance.interceptors.BulkheadInterceptor</class>
         <class>com.kumuluz.ee.fault.tolerance.interceptors.RetryInterceptor</class>
+        <class>com.kumuluz.ee.fault.tolerance.interceptors.FallbackInterceptor</class>
+        <class>com.kumuluz.ee.fault.tolerance.interceptors.AsynchronousInterceptor</class>
     </interceptors>
 </beans>

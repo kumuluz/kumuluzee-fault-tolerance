@@ -21,9 +21,13 @@
 package com.kumuluz.ee.fault.tolerance.models;
 
 import com.kumuluz.ee.fault.tolerance.enums.CircuitBreakerType;
+import com.kumuluz.ee.fault.tolerance.metrics.*;
 import org.eclipse.microprofile.faulttolerance.*;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Model for holding information fault tolerance needs to execute method.
@@ -50,11 +54,25 @@ public class ExecutionMetadata {
     private Integer circuitBreakerSuccessThreshold;
     private CircuitBreakerType circuitBreakerType;
 
+    private Map<String, CommonMetricsCollection> commonMetricsCollections;
+    private Map<String, RetryMetricsCollection> retryMetricsCollections;
+    private Map<String, TimeoutMetricsCollection> timeoutMetricsCollections;
+    private Map<String, FallbackMetricsCollection> fallbackMetricsCollectionMap;
+    private Map<String, CircuitBreakerMetricsCollection> cbMetricsCollectionMap;
+    private Map<String, BulkheadMetricsCollection> bulkheadMetricsCollectionMap;
+
     public ExecutionMetadata(Class targetClass, Method method, String commandKey, String groupKey) {
         this.targetClass = targetClass;
         this.method = method;
         this.commandKey = commandKey;
         this.groupKey = groupKey;
+
+        this.commonMetricsCollections = new HashMap<>();
+        this.retryMetricsCollections = new HashMap<>();
+        this.timeoutMetricsCollections = new HashMap<>();
+        this.fallbackMetricsCollectionMap = new HashMap<>();
+        this.cbMetricsCollectionMap = new HashMap<>();
+        this.bulkheadMetricsCollectionMap = new HashMap<>();
     }
 
     public String getIdentifier() {
@@ -147,5 +165,70 @@ public class ExecutionMetadata {
 
     public void setCircuitBreakerType(CircuitBreakerType circuitBreakerType) {
         this.circuitBreakerType = circuitBreakerType;
+    }
+
+    public Optional<CommonMetricsCollection> getCommonMetricsCollection(String methodName) {
+        return Optional.ofNullable(commonMetricsCollections.get(methodName));
+    }
+
+    public Optional<RetryMetricsCollection> getRetryMetricsCollection(String methodName) {
+        return Optional.ofNullable(retryMetricsCollections.get(methodName));
+    }
+
+    public Optional<TimeoutMetricsCollection> getTimeoutMetricsCollection(String methodName) {
+        return Optional.ofNullable(timeoutMetricsCollections.get(methodName));
+    }
+
+    public Optional<FallbackMetricsCollection> getFallbackMetricsCollection(String methodName) {
+        return Optional.ofNullable(fallbackMetricsCollectionMap.get(methodName));
+    }
+
+    public Optional<CircuitBreakerMetricsCollection> getCbMetricsCollection(String methodName) {
+        return Optional.ofNullable(cbMetricsCollectionMap.get(methodName));
+    }
+
+    public Optional<BulkheadMetricsCollection> getBulkheadMetricsCollection(String methodName) {
+        return Optional.ofNullable(bulkheadMetricsCollectionMap.get(methodName));
+    }
+
+    public void addCommonMetricsCollection(Method method, CommonMetricsCollection commonMetricsCollection) {
+        if (commonMetricsCollections.putIfAbsent(method.getName(), commonMetricsCollection) == null) {
+            initMetricsCollection(method.getName(), commonMetricsCollection);
+        }
+    }
+
+    public void addRetryMetricsCollection(Method method, RetryMetricsCollection retryMetricsCollection) {
+        if (retryMetricsCollections.putIfAbsent(method.getName(), retryMetricsCollection) == null) {
+            initMetricsCollection(method.getName(), retryMetricsCollection);
+        }
+    }
+
+    public void addTimeoutMetricsCollection(Method method, TimeoutMetricsCollection timeoutMetricsCollection) {
+        if (timeoutMetricsCollections.putIfAbsent(method.getName(), timeoutMetricsCollection) == null) {
+            initMetricsCollection(method.getName(), timeoutMetricsCollection);
+        }
+    }
+
+    public void addFallbackMetricsCollection(Method method, FallbackMetricsCollection fallbackMetricsCollection) {
+        if (fallbackMetricsCollectionMap.putIfAbsent(method.getName(), fallbackMetricsCollection) == null) {
+            initMetricsCollection(method.getName(), fallbackMetricsCollection);
+        }
+    }
+
+    public void addCbMetricsCollection(Method method, CircuitBreakerMetricsCollection cbMetricsCollection) {
+        if (cbMetricsCollectionMap.putIfAbsent(method.getName(), cbMetricsCollection) == null) {
+            initMetricsCollection(method.getName(), cbMetricsCollection);
+        }
+    }
+
+    public void addBulkheadMetricsCollection(Method method, BulkheadMetricsCollection bulkheadMetricsCollection) {
+        if (bulkheadMetricsCollectionMap.putIfAbsent(method.getName(), bulkheadMetricsCollection) == null) {
+            initMetricsCollection(method.getName(), bulkheadMetricsCollection);
+        }
+    }
+
+    private void initMetricsCollection(String methodName, BaseMetricsCollection baseMetricsCollection) {
+        baseMetricsCollection.setMetricsPrefix("ft." + this.targetClass.getCanonicalName() + "." + methodName + ".");
+        baseMetricsCollection.initialize();
     }
 }

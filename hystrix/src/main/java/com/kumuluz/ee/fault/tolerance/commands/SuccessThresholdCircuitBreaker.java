@@ -21,9 +21,14 @@
 package com.kumuluz.ee.fault.tolerance.commands;
 
 import com.kumuluz.ee.fault.tolerance.enums.CircuitBreakerType;
+import com.kumuluz.ee.fault.tolerance.metrics.CircuitBreakerMetricsCollection;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
 import com.netflix.hystrix.*;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -44,15 +49,32 @@ public class SuccessThresholdCircuitBreaker implements HystrixCircuitBreaker {
     private final AtomicLong circuitOpened = new AtomicLong(-1);
 
     private int successThreshold;
+    private CircuitBreakerMetricsCollection metricsCollection;
 
     private AtomicLong remainingHalfOpenInvocations = new AtomicLong(successThreshold);
-
     private AtomicLong successfulInvocations = new AtomicLong(0);
     private AtomicLong failedInvocations = new AtomicLong(0);
 
-    private SuccessThresholdCircuitBreaker(HystrixCommandProperties properties, Integer successThreshold) {
+    private Map<Status, AtomicLong> timeSpentInStatus;
+    private Instant previousChangeTime;
+
+    private SuccessThresholdCircuitBreaker(HystrixCommandProperties properties, Integer successThreshold,
+                                           CircuitBreakerMetricsCollection metricsCollection) {
         this.properties = properties;
         this.successThreshold = (successThreshold == null) ? 1 : successThreshold;
+        this.metricsCollection = metricsCollection;
+
+        this.timeSpentInStatus = new HashMap<>(Status.values().length);
+        this.timeSpentInStatus.put(Status.CLOSED, new AtomicLong(0L));
+        this.timeSpentInStatus.put(Status.OPEN, new AtomicLong(0L));
+        this.timeSpentInStatus.put(Status.HALF_OPEN, new AtomicLong(0L));
+        this.previousChangeTime = Instant.now();
+
+        if (metricsCollection != null) {
+            metricsCollection.registerClosedGauge(() -> getTimeSpentInStatus(Status.CLOSED));
+            metricsCollection.registerOpenGauge(() -> getTimeSpentInStatus(Status.OPEN));
+            metricsCollection.registerHalfOpenGauge(() -> getTimeSpentInStatus(Status.HALF_OPEN));
+        }
     }
 
     enum Status {
@@ -61,25 +83,33 @@ public class SuccessThresholdCircuitBreaker implements HystrixCircuitBreaker {
 
     @Override
     public void markSuccess() {
-        if (successfulInvocations.incrementAndGet() == successThreshold) {
+
+        if (successfulInvocations.incrementAndGet() == successThreshold && !this.status.get().equals(Status.CLOSED)) {
             //This thread wins the race to close the circuit
             circuitOpened.set(-1L);
 
-            this.status.set(Status.CLOSED);
+            Status previousStatus = this.status.getAndSet(Status.CLOSED);
             this.successfulInvocations.set(0);
             this.failedInvocations.set(0);
             this.remainingHalfOpenInvocations.set(successThreshold);
+            this.markStatusChange(previousStatus);
         }
+
+        checkThresholds(); // required because of late success while request volume not reached yet
     }
 
     @Override
     public void markNonSuccess() {
+
         if (status.compareAndSet(Status.HALF_OPEN, Status.OPEN)) {
             //This thread wins the race to re-open the circuit - it resets the start time for the sleep window
             circuitOpened.set(System.currentTimeMillis());
             this.successfulInvocations.set(0);
             this.failedInvocations.set(0);
             this.remainingHalfOpenInvocations.set(successThreshold);
+
+            this.metricsCollection.getOpened().inc();
+            this.markStatusChange(Status.HALF_OPEN);
         } else {
             this.failedInvocations.incrementAndGet();
             checkThresholds();
@@ -123,6 +153,11 @@ public class SuccessThresholdCircuitBreaker implements HystrixCircuitBreaker {
                 this.failedInvocations.set(0);
                 this.successfulInvocations.set(0);
                 this.remainingHalfOpenInvocations.set(successThreshold);
+
+                if (this.metricsCollection != null) {
+                    this.metricsCollection.getOpened().inc();
+                    this.markStatusChange(Status.CLOSED);
+                }
             }
         }
     }
@@ -150,6 +185,21 @@ public class SuccessThresholdCircuitBreaker implements HystrixCircuitBreaker {
         }
     }
 
+    private void markStatusChange(Status previous) {
+        Instant changeTime = Instant.now();
+        this.timeSpentInStatus.get(previous).addAndGet(Duration.between(this.previousChangeTime, changeTime).toNanos());
+        this.previousChangeTime = changeTime;
+    }
+
+    private Long getTimeSpentInStatus(Status status) {
+        long time = this.timeSpentInStatus.get(status).get();
+        if (this.status.get().equals(status)) {
+            time += Duration.between(this.previousChangeTime, Instant.now()).toNanos();
+        }
+
+        return time;
+    }
+
     public static class CustomCbFactory extends Factory {
         // String is HystrixCommandKey.name() (we can't use HystrixCommandKey directly as we can't guarantee it implements hashcode/equals correctly)
         private static ConcurrentHashMap<String, HystrixCircuitBreaker> circuitBreakersByCommand = new ConcurrentHashMap<>();
@@ -173,7 +223,8 @@ public class SuccessThresholdCircuitBreaker implements HystrixCircuitBreaker {
                                                         HystrixCommandGroupKey group,
                                                         HystrixCommandProperties properties,
                                                         HystrixCommandMetrics metrics,
-                                                        ExecutionMetadata metadata) {
+                                                        ExecutionMetadata metadata,
+                                                        CircuitBreakerMetricsCollection metricsCollection) {
             String mapKey = key.name();
             // this should find it for all but the first time
             HystrixCircuitBreaker previouslyCached = circuitBreakersByCommand.get(mapKey);
@@ -188,7 +239,8 @@ public class SuccessThresholdCircuitBreaker implements HystrixCircuitBreaker {
             // If 2 threads hit here only one will get added and the other will get a non-null response instead.
             HystrixCircuitBreaker instance = (metadata.getCircuitBreakerType().equals(CircuitBreakerType.HYSTRIX)) ?
                     Factory.getInstance(key, group, properties, metrics) :
-                    new SuccessThresholdCircuitBreaker(properties, metadata.getCircuitBreakerSuccessThreshold());
+                    new SuccessThresholdCircuitBreaker(properties, metadata.getCircuitBreakerSuccessThreshold(),
+                            metricsCollection);
             HystrixCircuitBreaker cbForCommand = circuitBreakersByCommand.putIfAbsent(mapKey, instance);
             if (cbForCommand == null) {
                 // this means the putIfAbsent step just created a new one so let's retrieve and return it

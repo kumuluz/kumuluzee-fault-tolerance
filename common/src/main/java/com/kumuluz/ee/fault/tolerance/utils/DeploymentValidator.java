@@ -27,7 +27,9 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.*;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 /**
  * Validates application fault tolerance logic during deployment, discovering configuration problems before actual
@@ -138,18 +140,32 @@ public class DeploymentValidator implements Extension {
         }
 
         if (!fallback.fallbackMethod().equals("")) {
-            for (AnnotatedMethod<? super T> fallbackMethod : type.getMethods()) {
-                if (fallbackMethod.getJavaMember().getName().equals(fallback.fallbackMethod())) {
-                    if (!fallbackMethodReturnTypeEqual(method, fallbackMethod.getJavaMember())) {
-                        throwDefinitionException(type, method, "Return type of method annotated with @Fallback does " +
-                                "not match the return type of its fallback method.");
-                    }
-                    if (!fallbackMethodParametersEqual(method, fallbackMethod.getJavaMember())) {
-                        throwDefinitionException(type, method, "Parameters of method annotated with @Fallback do " +
-                                "not match the parameters of its fallback method.");
-                    }
-                    break;
-                }
+            List<Method> matchingByName = type.getMethods().stream()
+                    .map(AnnotatedMethod::getJavaMember)
+                    .filter(m -> m.getName().equals(fallback.fallbackMethod()))
+                    .collect(Collectors.toList());
+
+            if (matchingByName.isEmpty()) {
+                throwDefinitionException(type, method, "Fallback method with name " + fallback.fallbackMethod() +
+                        " not found.");
+            }
+
+            List<Method> matchingByParameters = matchingByName.stream()
+                    .filter(m -> fallbackMethodParametersEqual(method, m))
+                    .collect(Collectors.toList());
+
+            if (matchingByParameters.isEmpty()) {
+                throwDefinitionException(type, method, "Parameters of method annotated with @Fallback do " +
+                        "not match the parameters of its fallback method.");
+            }
+
+            List<Method> matchingByReturnType = matchingByParameters.stream()
+                    .filter(m -> fallbackMethodReturnTypeEqual(method, m))
+                    .collect(Collectors.toList());
+
+            if (matchingByReturnType.isEmpty()) {
+                throwDefinitionException(type, method, "Return type of method annotated with @Fallback does " +
+                        "not match the return type of its fallback method.");
             }
         } else {
             Method[] handleInterfaceMethods = FallbackHandler.class.getMethods();

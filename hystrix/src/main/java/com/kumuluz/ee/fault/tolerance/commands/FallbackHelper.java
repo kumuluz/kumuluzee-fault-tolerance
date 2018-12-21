@@ -67,6 +67,9 @@ public class FallbackHelper {
                 DefaultFallbackExecutionContext executionContext = new DefaultFallbackExecutionContext();
                 executionContext.setMethod(ic.getMethod());
                 executionContext.setParameters(ic.getParameters());
+                executionContext.setFailiure(cause);
+
+                metadata.getFallbackMetricsCollection(ic.getMethod().getName()).ifPresent(c -> c.getTotalCalls().inc());
 
                 Object response = fallbackHandler.handle(executionContext);
 
@@ -74,6 +77,7 @@ public class FallbackHelper {
 
                 return response;
             } else if (metadata.getFallbackMethod() != null) {
+                metadata.getFallbackMetricsCollection(ic.getMethod().getName()).ifPresent(c -> c.getTotalCalls().inc());
                 return metadata.getFallbackMethod().invoke(ic.getTarget(),
                         ic.getParameters());
             } else {
@@ -86,7 +90,6 @@ public class FallbackHelper {
             String msg = "Exception occured while trying to invoke fallback method for key '" +
                     metadata.getCommandKey() + "': " + e.getClass().getName();
             log.severe(msg);
-            e.printStackTrace();
             throw new FaultToleranceException(msg, e);
         } finally {
             if (rcActivated && rc.isActive())

@@ -29,12 +29,10 @@ import com.kumuluz.ee.fault.tolerance.configurations.retry.RetryConfig;
 import com.kumuluz.ee.fault.tolerance.configurations.retry.RetryConfigurationManager;
 import com.kumuluz.ee.fault.tolerance.enums.FaultToleranceType;
 import com.kumuluz.ee.fault.tolerance.interfaces.FaultToleranceExecutor;
+import com.kumuluz.ee.fault.tolerance.metrics.TimeoutMetricsCollection;
 import com.kumuluz.ee.fault.tolerance.models.ConfigurationProperty;
 import com.kumuluz.ee.fault.tolerance.models.ExecutionMetadata;
-import com.netflix.hystrix.HystrixCommandGroupKey;
-import com.netflix.hystrix.HystrixCommandKey;
-import com.netflix.hystrix.KumuluzHystrixGenericCommand;
-import com.netflix.hystrix.HystrixThreadPoolKey;
+import com.netflix.hystrix.*;
 import com.netflix.hystrix.exception.HystrixBadRequestException;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
@@ -49,6 +47,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -88,11 +87,21 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
 
         HystrixCommandConfiguration hystrixCommandConfig = getHystrixCommandSetter(metadata);
 
-        if (metadata.getRetry() == null) {
-            return executeWithHystrix(hystrixCommandConfig, invocationContext, requestContext, metadata);
-        } else {
-            return executeWithRetry(hystrixCommandConfig, invocationContext, requestContext, metadata,
-                    null, 1, null);
+        metadata.getCommonMetricsCollection(invocationContext.getMethod().getName())
+                .ifPresent(c -> c.getTotalInvocations().inc());
+
+        try {
+            if (metadata.getRetry() == null) {
+                return executeWithHystrix(hystrixCommandConfig, invocationContext, requestContext, metadata);
+            } else {
+                return executeWithRetry(hystrixCommandConfig, invocationContext, requestContext, metadata,
+                        null, 1, null);
+            }
+        } catch (Exception e) {
+            metadata.getCommonMetricsCollection(invocationContext.getMethod().getName())
+                    .ifPresent(c -> c.getFailedInvocations().inc());
+
+            throw e;
         }
     }
 
@@ -103,15 +112,28 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         if (retryConfig == null)
             retryConfig = retryManager.getRetryConfig(metadata.getIdentifier());
 
-        if (execCnt > 1)
+        if (execCnt > 1) {
             log.info("Retry attempt #" + execCnt + " to execute command '" + metadata.getCommandKey() + ".");
+            metadata.getRetryMetricsCollection(invocationContext.getMethod().getName())
+                    .ifPresent(c -> c.getRetriesTotal().inc());
+        }
 
         if (executionStart == null) {
             executionStart = Instant.now();
         }
 
         try {
-            return executeWithHystrix(hystrixCommand, invocationContext, requestContext, metadata);
+            Object returnObject = executeWithHystrix(hystrixCommand, invocationContext, requestContext, metadata);
+
+            if (execCnt > 1) {
+                metadata.getRetryMetricsCollection(invocationContext.getMethod().getName())
+                        .ifPresent(c -> c.getCallsSucceededRetried().inc());
+            } else {
+                metadata.getRetryMetricsCollection(invocationContext.getMethod().getName())
+                        .ifPresent(c -> c.getCallsSucceededNotRetried().inc());
+            }
+
+            return returnObject;
         } catch (Exception e) {
             boolean doRetryOn = Arrays.stream(retryConfig.getRetryOn()).anyMatch(ro -> ro.isInstance(e));
             boolean doAbortOn = Arrays.stream(retryConfig.getAbortOn()).anyMatch(ao -> ao.isInstance(e));
@@ -135,6 +157,8 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
                 return FallbackHelper.executeFallback(e, metadata, invocationContext, null);
             } else {
                 // retry is not allowed, fallback is not set
+                metadata.getRetryMetricsCollection(invocationContext.getMethod().getName())
+                        .ifPresent(c -> c.getCallsFailed().inc());
                 throw e;
             }
         }
@@ -167,46 +191,74 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
 
                     @Override
                     public Object get() throws InterruptedException, ExecutionException {
-                        Object o = queued.get();
+                        Object o;
+                        try {
+                            o = queued.get();
 
-                        if (o instanceof Future) {
-                            return ((Future) o).get();
+                            if (o instanceof Future) {
+                                o = ((Future) o).get();
+                            }
+                        } catch (ExecutionException e) {
+                            Exception processedException = unwrapBulkheadException(e);
+
+                            if (processedException == null && e.getCause() instanceof HystrixRuntimeException) {
+                                processedException = processHystrixException((HystrixRuntimeException) e.getCause(),
+                                        metadata, invocationContext, cmd);
+                            }
+
+                            throw new ExecutionException(processedException);
                         }
+
+                        updateExecutionSuccessfulMetrics(metadata, invocationContext, cmd);
 
                         return o;
                     }
 
                     @Override
                     public Object get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
-                        Object o = queued.get();
+                        Object o;
+                        try {
+                            o = queued.get();
 
-                        if (o instanceof Future) {
-                            return ((Future) o).get(l, timeUnit);
+                            if (o instanceof Future) {
+                                o = ((Future) o).get(l, timeUnit);
+                            }
+                        } catch (ExecutionException e) {
+                            Exception processedException = unwrapBulkheadException(e);
+
+                            if (processedException == null && e.getCause() instanceof HystrixRuntimeException) {
+                                processedException = processHystrixException((HystrixRuntimeException) e.getCause(),
+                                        metadata, invocationContext, cmd);
+                            }
+
+                            throw new ExecutionException(processedException);
                         }
+
+                        updateExecutionSuccessfulMetrics(metadata, invocationContext, cmd);
 
                         return o;
                     }
                 };
             } else {
-                return cmd.execute();
+                Object returnObject = cmd.execute();
+                updateExecutionSuccessfulMetrics(metadata, invocationContext, cmd);
+                return returnObject;
             }
         } catch (HystrixBadRequestException e) {
             throw (Exception) e.getCause();
         } catch (HystrixRuntimeException e) {
             log.warning("Hystrix runtime exception was thrown because of " + e.getCause().getClass().getName());
 
-            switch (e.getFailureType()) {
-                case TIMEOUT:
-                    throw new TimeoutException("Execution timed out.");
-                case SHORTCIRCUIT:
-                    throw new CircuitBreakerOpenException("Circuit breaker is in OPEN state.");
-                case REJECTED_THREAD_EXECUTION:
-                    throw new BulkheadException("Thread execution was rejected.");
-                case REJECTED_SEMAPHORE_EXECUTION:
-                    throw new BulkheadException("Semaphore execution was rejected.");
-                default:
-                    throw (Exception) e.getCause();
-            }
+            throw processHystrixException(e, metadata, invocationContext, cmd);
+        }
+    }
+
+    private void markBulkheadRejected(ExecutionMetadata metadata, InvocationContext invocationContext) {
+        metadata.getBulkheadMetricsCollection(invocationContext.getMethod().getName())
+                .ifPresent(c -> c.getCallsRejected().inc());
+        if (metadata.isAsynchronous()) {
+            metadata.getBulkheadMetricsCollection(invocationContext.getMethod().getName())
+                    .ifPresent(c -> c.getCurrentlyWaiting().decrementAndGet());
         }
     }
 
@@ -296,5 +348,67 @@ public class HystrixFaultToleranceExecutorImpl implements FaultToleranceExecutor
         hystrixThreadPoolKeys.put(key, threadPoolKey);
 
         return threadPoolKey;
+    }
+
+    private BulkheadException unwrapBulkheadException(ExecutionException e) throws ExecutionException {
+        Throwable current = e;
+        Throwable previous = null;
+
+        while (previous != current && current != null) {
+
+            if (current instanceof BulkheadException) {
+                return (BulkheadException) current;
+            }
+
+            previous = current;
+            current = current.getCause();
+        }
+
+        return null;
+    }
+
+    private void updateExecutionSuccessfulMetrics(ExecutionMetadata metadata, InvocationContext invocationContext,
+                                                  HystrixCommand cmd) {
+        Optional<TimeoutMetricsCollection> metricsCollection = metadata.getTimeoutMetricsCollection(invocationContext
+                .getMethod().getName());
+        if (metricsCollection.isPresent()) {
+            metricsCollection.get().getExecutionDuration().update(cmd.getExecutionTimeInMilliseconds() * 1000000);
+            metricsCollection.get().getCallsNotTimedOut().inc();
+        }
+
+        metadata.getCbMetricsCollection(invocationContext.getMethod().getName())
+                .ifPresent(c -> c.getCallsSucceeded().inc());
+    }
+
+    private Exception processHystrixException(HystrixRuntimeException e, ExecutionMetadata metadata,
+                                                            InvocationContext invocationContext, HystrixCommand cmd) {
+
+        if (e.getFailureType().equals(HystrixRuntimeException.FailureType.SHORTCIRCUIT)) {
+            metadata.getCbMetricsCollection(invocationContext.getMethod().getName())
+                    .ifPresent(c -> c.getCallsPrevented().inc());
+        } else {
+            metadata.getCbMetricsCollection(invocationContext.getMethod().getName())
+                    .ifPresent(c -> c.getCallsFailed().inc());
+        }
+
+        switch (e.getFailureType()) {
+            case TIMEOUT:
+                metadata.getTimeoutMetricsCollection(invocationContext.getMethod().getName())
+                        .ifPresent(c -> c.getExecutionDuration()
+                                .update(cmd.getExecutionTimeInMilliseconds() * 1000000));
+                metadata.getTimeoutMetricsCollection(invocationContext.getMethod().getName())
+                        .ifPresent(c -> c.getCallsTimedOut().inc());
+                return new TimeoutException("Execution timed out.");
+            case SHORTCIRCUIT:
+                return new CircuitBreakerOpenException("Circuit breaker is in OPEN state.");
+            case REJECTED_THREAD_EXECUTION:
+                markBulkheadRejected(metadata, invocationContext);
+                return new BulkheadException("Thread execution was rejected.");
+            case REJECTED_SEMAPHORE_EXECUTION:
+                markBulkheadRejected(metadata, invocationContext);
+                return new BulkheadException("Semaphore execution was rejected.");
+            default:
+                return (Exception) e.getCause();
+        }
     }
 }

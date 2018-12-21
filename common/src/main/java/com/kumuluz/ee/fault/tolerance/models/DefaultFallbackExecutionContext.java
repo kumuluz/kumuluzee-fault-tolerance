@@ -34,6 +34,7 @@ public class DefaultFallbackExecutionContext implements ExecutionContext {
 
     private Method method;
     private Object[] parameters;
+    private Throwable failure;
 
     public void setMethod(Method method) {
         this.method = method;
@@ -51,5 +52,14 @@ public class DefaultFallbackExecutionContext implements ExecutionContext {
     @Override
     public Object[] getParameters() {
         return parameters;
+    }
+
+    public void setFailiure(Throwable failure) {
+        this.failure = failure;
+    }
+
+    @Override
+    public Throwable getFailure() {
+        return failure;
     }
 }

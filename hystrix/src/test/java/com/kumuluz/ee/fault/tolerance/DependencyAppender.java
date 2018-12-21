@@ -47,6 +47,10 @@ public class DependencyAppender implements MavenDependencyAppender {
                 versionsBundle.getString("hystrix-version"));
         libs.add("com.kumuluz.ee.config:kumuluzee-config-mp:" +
                 versionsBundle.getString("kumuluzee-config-mp-version"));
+        libs.add("com.kumuluz.ee.metrics:kumuluzee-metrics-core:" +
+                versionsBundle.getString("kumuluzee-metrics-version"));
+        libs.add("org.hamcrest:hamcrest-all:" +
+                versionsBundle.getString("hamcrest-all-version"));
 
         return libs;
     }
