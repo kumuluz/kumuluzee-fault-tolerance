@@ -11,11 +11,8 @@ configuring via KumuluzEE Config is supported.
 KumuluzEE Fault Tolerance has been designed to support modularity with pluggable fault tolerance frameworks. Currently, 
 Hystrix is supported. Contributions for other fault tolerance providers are welcome.
 
-KumuluzEE Fault Tolerance is developing towards 
-[MicroProfile Fault Tolerance specification](http://microprofile.io/project/eclipse/microprofile-fault-tolerance). 
-Currently, all defined annotations are kept within KumuluzEE Fault Tolerance packages. When MicroProfile Fault Tolerance 
-final version will be released and all defined features in KumuluzEE Fault Tolerance will be implemented, the official 
-MicroProfile Fault Tolerance API will be included.
+KumuluzEE Fault Tolerance fully supports the 
+[MicroProfile Fault Tolerance specification](http://microprofile.io/project/eclipse/microprofile-fault-tolerance).
 
 ## Usage
 
@@ -24,11 +21,11 @@ You can add the KumuluzEE Fault Tolerance with Hystrix by adding the following d
 <dependency>
     <groupId>com.kumuluz.ee.fault.tolerance</groupId>
     <artifactId>kumuluzee-fault-tolerance-hystrix</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>${kumuluzee.fault-tolerance.version}</version>
 </dependency>
 ```
 
-To enable fault tolerance patterns using KumuluzEE Fault Tolerance, CDI class has to be annotated with annotations for
+To enable fault tolerance patterns using KumuluzEE Fault Tolerance, method in CDI class has to be annotated with annotations for
 desired fault tolerance pattern. Currently `@CircuitBreaker`, `@Bulkhead`, `@Timeout`, `@Retry` and `@Fallback` are supported.
 If annotation is added on class, the pattern will be applied on all methods within class.
 
@@ -291,6 +288,29 @@ public class CustomersBean {
 
 }
 ``` 
+
+### Integration with KumuluzEE Metrics
+
+KumuluzEE Fault Tolerance includes integration with the Metrics extension and adds important metrics of the fault
+tolerance patterns to the registry. To enable this integration, simply add the following dependency to your pom.xml:
+
+```xml
+<dependency>
+    <groupId>com.kumuluz.ee.metrics</groupId>
+    <artifactId>kumuluzee-metrics-core</artifactId>
+    <version>${kumuluzee-metrics.version}</version>
+</dependency>
+```
+
+Some of the metrics included are:
+
+- histogram of execution times of methods annotated with `@Timeout`
+- number of times the method annotated with `@Retry` was retried
+- number of calls prevented by the circuit breaker
+- number of executions in queue for methods, annotated with `@Bulkhead` and `@Asynchronous`
+- number of times the fallback method has been executed
+
+For description of all metrics, check out the MicroProfile Fault Tolerance specification.
 
 ## Changelog
 
