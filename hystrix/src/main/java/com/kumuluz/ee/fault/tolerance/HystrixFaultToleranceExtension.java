@@ -27,8 +27,12 @@ import com.kumuluz.ee.common.dependencies.EeComponentType;
 import com.kumuluz.ee.common.dependencies.EeExtensionDef;
 import com.kumuluz.ee.common.dependencies.EeExtensionGroup;
 import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
+import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
+import com.kumuluz.ee.fault.tolerance.config.IsEnabledConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
 
 /**
  * KumuluzEE framework extension for Hystrix based fault tolerance
@@ -45,10 +49,26 @@ public class HystrixFaultToleranceExtension implements Extension {
     @Override
     public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
         log.info("Initialising fault tolerance implemented by Hystrix.");
+        IsEnabledConfig.setEnabled(true);
     }
 
     @Override
     public void load() {
         log.info("Initialised fault tolerance implemented by Hystrix.");
+    }
+
+    @Override
+    public boolean isEnabled() {
+
+        ConfigurationUtil configurationUtil = ConfigurationUtil.getInstance();
+
+        Optional<Boolean> enabled = configurationUtil.getBoolean("kumuluzee.fault-tolerance.hystrix.enabled");
+        if (enabled.isPresent()) {
+            return enabled.get();
+        }
+
+        enabled = configurationUtil.getBoolean("kumuluzee.fault-tolerance.enabled");
+
+        return enabled.orElse(true);
     }
 }

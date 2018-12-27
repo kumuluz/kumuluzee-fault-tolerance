@@ -20,6 +20,7 @@
  */
 package com.kumuluz.ee.fault.tolerance.utils;
 
+import com.kumuluz.ee.fault.tolerance.config.IsEnabledConfig;
 import org.eclipse.microprofile.faulttolerance.*;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 
@@ -41,6 +42,11 @@ import java.util.stream.Collectors;
 public class DeploymentValidator implements Extension {
 
     public <T> void processAnnotatedType(@Observes ProcessAnnotatedType<T> anType, BeanManager beanManager) {
+
+        if (!IsEnabledConfig.isEnabled()) {
+            return;
+        }
+
         AnnotatedType<T> type = anType.getAnnotatedType();
 
         if (type.isAnnotationPresent(Timeout.class)) {

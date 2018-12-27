@@ -20,6 +20,8 @@
  */
 package com.kumuluz.ee.fault.tolerance.interceptors;
 
+import com.kumuluz.ee.fault.tolerance.config.IsEnabledConfig;
+
 import javax.interceptor.InvocationContext;
 
 /**
@@ -40,6 +42,10 @@ public class FaultToleranceInterceptorPriority {
     public static final int ASYNCHRONOUS = 6;
 
     public static boolean shouldExecute(InvocationContext ic) {
+
+        if (!IsEnabledConfig.isEnabled()) {
+            return false;
+        }
 
         Boolean isExecuted = (Boolean) ic.getContextData().get(CONTEXT_DATA_EXECUTION_METADATA_KEY);
 
