@@ -21,7 +21,7 @@ You can add the KumuluzEE Fault Tolerance with Hystrix by adding the following d
 <dependency>
     <groupId>com.kumuluz.ee.fault.tolerance</groupId>
     <artifactId>kumuluzee-fault-tolerance-hystrix</artifactId>
-    <version>${kumuluzee.fault-tolerance.version}</version>
+    <version>${kumuluzee-fault-tolerance.version}</version>
 </dependency>
 ```
 
