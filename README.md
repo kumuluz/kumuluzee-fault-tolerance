@@ -36,7 +36,7 @@ we will add additional usage possibilities.
 
 ### Fault Tolerance basic configuration
 
-All fault tolerance executions are executed as a commands withing groups. Each command and group is identified with key.
+All fault tolerance executions are executed as commands withing groups. Each command and group is identified with key.
 By default, `<class_name>-<method_name>` is used as a key for command and `<class_name>` is used as a key for group.
 Default settings can be overridden with `@CommandKey` and `@GroupKey` annotations.
 
