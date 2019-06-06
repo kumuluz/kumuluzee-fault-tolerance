@@ -3,6 +3,9 @@
 
 > KumuluzEE Fault Tolerance project for the KumuluzEE microservice framework. 
 
+__NOTE:__ KumuluzEE Fault Tolerance Hystrix implementation is deprecated and will only receive critical bugfixes.
+Consider using KumuluzEE Fault Tolerance SmallRye instead.
+
 KumuluzEE Fault Tolerance is a fault tolerance project for the KumuluzEE microservice framework. It provides support 
 for fault tolerance and latency tolerance with circuit breaker, bulkhead, timeout, retry and fallback patterns. 
 KumuluzEE Fault Tolerance supports basic fault tolerance configuration using annotations. Additionaly, 
