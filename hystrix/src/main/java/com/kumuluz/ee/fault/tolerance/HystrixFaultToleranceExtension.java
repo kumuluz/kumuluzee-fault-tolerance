@@ -49,6 +49,8 @@ public class HystrixFaultToleranceExtension implements Extension {
     @Override
     public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
         log.info("Initialising fault tolerance implemented by Hystrix.");
+        log.warn("This implementation of fault tolerance is deprecated since 2.0.0 release. If possible use the " +
+                "SmallRye implementation (kumuluzee-fault-tolerance-smallrye).");
         IsEnabledConfig.setEnabled(true);
     }
 

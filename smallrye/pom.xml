@@ -9,10 +9,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>KumuluzEE Fault Tolerance Hystrix</name>
-    <description>KumuluzEE Fault Tolerance extension with hystrix</description>
+    <name>KumuluzEE Fault Tolerance SmallRye</name>
+    <description>KumuluzEE Fault Tolerance extension with SmallRye</description>
 
-    <artifactId>kumuluzee-fault-tolerance-hystrix</artifactId>
+    <artifactId>kumuluzee-fault-tolerance-smallrye</artifactId>
 
     <dependencies>
         <dependency>
@@ -26,20 +26,15 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.kumuluz.ee.fault.tolerance</groupId>
-            <artifactId>kumuluzee-fault-tolerance-common</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.netflix.hystrix</groupId>
-            <artifactId>hystrix-core</artifactId>
-            <version>${hystrix.version}</version>
+            <groupId>io.smallrye</groupId>
+            <artifactId>smallrye-fault-tolerance</artifactId>
+            <version>${smallrye-ft.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
             <artifactId>microprofile-fault-tolerance-tck</artifactId>
-            <version>${microprofile-faulttolerance.version}</version>
+            <version>${microprofile-faulttolerance-smallrye.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -63,15 +58,10 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.plugin.version}</version>
                 <configuration>
-                    <!-- as hystrix implementation no longer receives updates the tests are disabled -->
-                    <!-- if any updates are made for hystrix implementation the tests must be executed manually -->
-<!--                    <suiteXmlFiles>-->
-<!--                        <suiteXmlFile>tck-suite.xml</suiteXmlFile>-->
-<!--                    </suiteXmlFiles>-->
+                    <suiteXmlFiles>
+                        <suiteXmlFile>tck-suite.xml</suiteXmlFile>
+                    </suiteXmlFiles>
                     <trimStackTrace>false</trimStackTrace>
-                    <environmentVariables>
-                        <FAULTTOLERANCE_CIRCUITBREAKER_CIRCUITBREAKERTYPE>SUCCESS_THRESHOLD</FAULTTOLERANCE_CIRCUITBREAKER_CIRCUITBREAKERTYPE>
-                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>

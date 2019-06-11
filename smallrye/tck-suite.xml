@@ -1,0 +1,30 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+
+<suite name="microprofile-fault-tolerance-TCK" verbose="2">
+
+    <test name="microprofile-fault-tolerance TCK">
+        <packages>
+            <package name="org.eclipse.microprofile.fault.tolerance.tck.*"/>
+        </packages>
+
+        <classes>
+            <!-- See: https://github.com/smallrye/smallrye-fault-tolerance/blob/master/testsuite/tck/src/test/tck-suite.xml -->
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadAsynchRetryTest">
+                <methods>
+                    <exclude name="testRetriesJoinBackOfQueue"/>
+                </methods>
+            </class>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.metrics.BulkheadMetricTest">
+                <methods>
+                    <exclude name="bulkheadMetricAsyncTest"/>
+                </methods>
+            </class>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutUninterruptableTest">
+                <methods>
+                    <exclude name="testTimeout"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+
+</suite>
