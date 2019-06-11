@@ -183,7 +183,7 @@ kumuluzee:
         method: exampleMethod
         annotation: retry
         parameters:
-          max-retries: 12
+          max-retries: 15
 ```
 
 The rules are as follows:
@@ -223,6 +223,19 @@ kumuluzee:
 __NOTE:__ In order to override annotation parameters the annotation must actually exist. For example if the
 `com.example.beans.ExampleBean` didn't have the `@Retry` annotation in the example above the configuration would not
 work (even if the methods defined in the class had the `@Retry` annotation).
+
+Another option available is specifying global overrides. For example the following config will disable all `@Fallback`
+annotations and set the `maxRetries` argument of all `@Retry` annotations to 10. Again, note that annotation and
+parameter names in keys need to be in hyphen-case.
+
+```yaml
+kumuluzee:
+  fault-tolerance:
+    fallback:
+      enabled: false
+    retry:
+      max-retries: 10
+```
 
 Presented configuration keys are one-to-one mapping to the keys defined in MP Fault Tolerance specification. Mapping is
 being done in order to better fit the KumuluzEE configuration model. If desired the keys defined in the specification
