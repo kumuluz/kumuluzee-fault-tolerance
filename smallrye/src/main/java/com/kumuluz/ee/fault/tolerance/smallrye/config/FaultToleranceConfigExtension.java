@@ -27,7 +27,7 @@ import com.kumuluz.ee.common.dependencies.EeExtensionGroup;
 import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
 import com.kumuluz.ee.configuration.ConfigurationSource;
 
-import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -56,6 +56,11 @@ public class FaultToleranceConfigExtension implements ConfigExtension {
 
     @Override
     public List<ConfigurationSource> getConfigurationSources() {
-        return Collections.singletonList(new FaultToleranceConfigMapper());
+
+        List<ConfigurationSource> configSources = new LinkedList<>();
+        configSources.add(new FaultToleranceConfigMapper());
+        configSources.add(new MetricsKeyConfigOverride());
+
+        return configSources;
     }
 }

@@ -45,7 +45,7 @@ public class FaultToleranceConfigMapper implements ConfigurationSource {
     private static final String MP_NON_FALLBACK_ENABLED_KEY = "MP_Fault_Tolerance_NonFallback_Enabled";
     private static final String KUMULUZ_NON_FALLBACK_ENABLED_KEY = "kumuluzee.fault-tolerance.non-fallback-enabled";
 
-    private static final String MP_METRICS_ENABLED_KEY = "MP_Fault_Tolerance_Metrics_Enabled";
+    static final String MP_METRICS_ENABLED_KEY = "MP_Fault_Tolerance_Metrics_Enabled";
     private static final String KUMULUZ_METRICS_ENABLED_KEY = "kumuluzee.fault-tolerance.metrics-enabled";
 
     private static final Class[] FAULT_TOLERANCE_ANNOTATIONS = {

@@ -27,6 +27,8 @@ import com.kumuluz.ee.common.runtime.EeRuntime;
 import com.kumuluz.ee.common.wrapper.KumuluzServerWrapper;
 import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 
+import java.util.logging.Logger;
+
 /**
  * KumuluzEE Fault Tolerance extension implemented by SmallRye.
  *
@@ -39,6 +41,10 @@ import com.kumuluz.ee.configuration.utils.ConfigurationUtil;
 })
 public class SmallRyeFtExtension implements Extension {
 
+    private static final Logger LOG = Logger.getLogger(SmallRyeFtExtension.class.getName());
+
+    private static boolean metricsEnabled = true;
+
     @Override
     public void init(KumuluzServerWrapper kumuluzServerWrapper, EeConfig eeConfig) {
         if (!isExtensionPresent(EeExtensionGroup.CONFIG, "MicroProfile")) {
@@ -50,9 +56,9 @@ public class SmallRyeFtExtension implements Extension {
                ConfigurationUtil.getInstance().getBoolean("MP_Fault_Tolerance_Metrics_Enabled")
                        .orElse(true)) {
             // metrics extension is missing but collection of metrics is enabled
-            throw new IllegalStateException("KumuluzEE Metrics extension is required for SmallRye Fault Tolerance " +
-                    "extension to collect metrics properly. Please make sure it is added to dependencies or disable " +
-                    "metrics collection with configuration key kumuluzee.fault-tolerance.metrics-enabled.");
+            LOG.info("KumuluzEE Metrics extension not found. Disabling metrics collection in KumuluzEE Fault " +
+                    "Tolerance.");
+            metricsEnabled = false;
         }
     }
 
@@ -70,5 +76,9 @@ public class SmallRyeFtExtension implements Extension {
     static boolean isExtensionPresent(String group, String implementationName) {
         return EeRuntime.getInstance().getEeExtensions().stream().anyMatch(ext ->
                 ext.getGroup().equals(group) && ext.getImplementationName().equals(implementationName));
+    }
+
+    public static boolean isMetricsEnabled() {
+        return metricsEnabled;
     }
 }
