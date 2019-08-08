@@ -27,7 +27,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 
 /**
- * NOOP Metric Registry, used only to satisfy injection point if KumuluzEE Metrics dependency is not present.
+ * NO-OP Metric Registry, used only to satisfy injection point if KumuluzEE Metrics dependency is not present.
  *
  * @author Urban Malc
  * @since 2.0.0
@@ -40,12 +40,12 @@ public class NoopMetricRegistry extends MetricRegistry {
     }
 
     @Override
-    public <T extends Metric> T register(String name, T metric, Metadata metadata) throws IllegalArgumentException {
+    public <T extends Metric> T register(Metadata metadata, T metric) throws IllegalArgumentException {
         return null;
     }
 
     @Override
-    public <T extends Metric> T register(Metadata metadata, T metric) throws IllegalArgumentException {
+    public <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
         return null;
     }
 
@@ -55,7 +55,37 @@ public class NoopMetricRegistry extends MetricRegistry {
     }
 
     @Override
+    public Counter counter(String name, Tag... tags) {
+        return null;
+    }
+
+    @Override
     public Counter counter(Metadata metadata) {
+        return null;
+    }
+
+    @Override
+    public Counter counter(Metadata metadata, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(String name) {
+        return null;
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(String name, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(Metadata metadata) {
+        return null;
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(Metadata metadata, Tag... tags) {
         return null;
     }
 
@@ -65,7 +95,17 @@ public class NoopMetricRegistry extends MetricRegistry {
     }
 
     @Override
+    public Histogram histogram(String name, Tag... tags) {
+        return null;
+    }
+
+    @Override
     public Histogram histogram(Metadata metadata) {
+        return null;
+    }
+
+    @Override
+    public Histogram histogram(Metadata metadata, Tag... tags) {
         return null;
     }
 
@@ -75,7 +115,17 @@ public class NoopMetricRegistry extends MetricRegistry {
     }
 
     @Override
+    public Meter meter(String name, Tag... tags) {
+        return null;
+    }
+
+    @Override
     public Meter meter(Metadata metadata) {
+        return null;
+    }
+
+    @Override
+    public Meter meter(Metadata metadata, Tag... tags) {
         return null;
     }
 
@@ -85,12 +135,27 @@ public class NoopMetricRegistry extends MetricRegistry {
     }
 
     @Override
+    public Timer timer(String name, Tag... tags) {
+        return null;
+    }
+
+    @Override
     public Timer timer(Metadata metadata) {
         return null;
     }
 
     @Override
+    public Timer timer(Metadata metadata, Tag... tags) {
+        return null;
+    }
+
+    @Override
     public boolean remove(String name) {
+        return false;
+    }
+
+    @Override
+    public boolean remove(MetricID metricID) {
         return false;
     }
 
@@ -105,57 +170,72 @@ public class NoopMetricRegistry extends MetricRegistry {
     }
 
     @Override
-    public SortedMap<String, Gauge> getGauges() {
+    public SortedSet<MetricID> getMetricIDs() {
         return null;
     }
 
     @Override
-    public SortedMap<String, Gauge> getGauges(MetricFilter filter) {
+    public SortedMap<MetricID, Gauge> getGauges() {
         return null;
     }
 
     @Override
-    public SortedMap<String, Counter> getCounters() {
+    public SortedMap<MetricID, Gauge> getGauges(MetricFilter filter) {
         return null;
     }
 
     @Override
-    public SortedMap<String, Counter> getCounters(MetricFilter filter) {
+    public SortedMap<MetricID, Counter> getCounters() {
         return null;
     }
 
     @Override
-    public SortedMap<String, Histogram> getHistograms() {
+    public SortedMap<MetricID, Counter> getCounters(MetricFilter filter) {
         return null;
     }
 
     @Override
-    public SortedMap<String, Histogram> getHistograms(MetricFilter filter) {
+    public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges() {
         return null;
     }
 
     @Override
-    public SortedMap<String, Meter> getMeters() {
+    public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges(MetricFilter filter) {
         return null;
     }
 
     @Override
-    public SortedMap<String, Meter> getMeters(MetricFilter filter) {
+    public SortedMap<MetricID, Histogram> getHistograms() {
         return null;
     }
 
     @Override
-    public SortedMap<String, Timer> getTimers() {
+    public SortedMap<MetricID, Histogram> getHistograms(MetricFilter filter) {
         return null;
     }
 
     @Override
-    public SortedMap<String, Timer> getTimers(MetricFilter filter) {
+    public SortedMap<MetricID, Meter> getMeters() {
         return null;
     }
 
     @Override
-    public Map<String, Metric> getMetrics() {
+    public SortedMap<MetricID, Meter> getMeters(MetricFilter filter) {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Timer> getTimers() {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Timer> getTimers(MetricFilter filter) {
+        return null;
+    }
+
+    @Override
+    public Map<MetricID, Metric> getMetrics() {
         return null;
     }
 

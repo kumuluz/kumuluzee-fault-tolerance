@@ -9,16 +9,6 @@
 
         <classes>
             <!-- See: https://github.com/smallrye/smallrye-fault-tolerance/blob/master/testsuite/tck/src/test/tck-suite.xml -->
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadAsynchRetryTest">
-                <methods>
-                    <exclude name="testRetriesJoinBackOfQueue"/>
-                </methods>
-            </class>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.metrics.BulkheadMetricTest">
-                <methods>
-                    <exclude name="bulkheadMetricAsyncTest"/>
-                </methods>
-            </class>
             <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutUninterruptableTest">
                 <methods>
                     <exclude name="testTimeout"/>

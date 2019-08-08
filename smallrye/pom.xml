@@ -27,7 +27,7 @@
         </dependency>
         <dependency>
             <groupId>io.smallrye</groupId>
-            <artifactId>smallrye-fault-tolerance</artifactId>
+            <artifactId>smallrye-fault-tolerance-2.0</artifactId>
             <version>${smallrye-ft.version}</version>
         </dependency>
 
@@ -62,6 +62,9 @@
                         <suiteXmlFile>tck-suite.xml</suiteXmlFile>
                     </suiteXmlFiles>
                     <trimStackTrace>false</trimStackTrace>
+                    <environmentVariables>
+                        <KUMULUZEE_METRICS_ADDDEFAULTTAGS>false</KUMULUZEE_METRICS_ADDDEFAULTTAGS>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>
