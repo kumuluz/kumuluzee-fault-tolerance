@@ -38,7 +38,7 @@
         <microprofile-metrics.version>1.1.1</microprofile-metrics.version>
         <!-- versions for SmallRye -->
         <microprofile-faulttolerance-smallrye.version>2.0.1</microprofile-faulttolerance-smallrye.version>
-        <microprofile-metrics-smallrye.version>1.2.0-SNAPSHOT</microprofile-metrics-smallrye.version>
+        <microprofile-metrics-smallrye.version>2.0.1</microprofile-metrics-smallrye.version>
 
         <hystrix.version>1.5.12</hystrix.version>
         <smallrye-ft.version>1.0.1</smallrye-ft.version>
