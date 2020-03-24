@@ -49,7 +49,7 @@ public class DependencyAppender implements MavenDependencyAppender {
                 versionsBundle.getString("kumuluzee-metrics-version"));
         libs.add("org.hamcrest:hamcrest-all:" +
                 versionsBundle.getString("hamcrest-all-version"));
-        libs.add("io.smallrye:smallrye-fault-tolerance-2.0:" + versionsBundle.getString("smallrye-ft-version"));
+        libs.add("io.smallrye:smallrye-fault-tolerance:" + versionsBundle.getString("smallrye-ft-version"));
 
         return libs;
     }
