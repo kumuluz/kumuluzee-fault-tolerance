@@ -7,14 +7,6 @@
             <package name="org.eclipse.microprofile.fault.tolerance.tck.*"/>
         </packages>
 
-        <classes>
-            <!-- See: https://github.com/smallrye/smallrye-fault-tolerance/blob/master/testsuite/tck/src/test/tck-suite.xml -->
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutUninterruptableTest">
-                <methods>
-                    <exclude name="testTimeout"/>
-                </methods>
-            </class>
-        </classes>
     </test>
 
 </suite>

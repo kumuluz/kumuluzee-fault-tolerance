@@ -1,0 +1,6 @@
+# Needed for extreme load in some bulkhead tests
+# https://github.com/smallrye/smallrye-fault-tolerance/blob/master/implementation/fault-tolerance/src/main/java/io/smallrye/faulttolerance/ExecutorProvider.java#L27
+io:
+  smallrye:
+    faulttolerance:
+      globalThreadPoolSize: 1000

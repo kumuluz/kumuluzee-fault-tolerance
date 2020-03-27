@@ -39,6 +39,7 @@ public class FaultToleranceArchiveProcessor implements ApplicationArchiveProcess
 
         archive.as(WebArchive.class)
                 .addAsResource("config-hystrix.properties")
+                .addAsResource("config.yaml")
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
 }
