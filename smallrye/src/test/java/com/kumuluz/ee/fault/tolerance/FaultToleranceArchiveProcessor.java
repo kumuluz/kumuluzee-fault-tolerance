@@ -26,6 +26,8 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
+import java.util.logging.Logger;
+
 /**
  * Adds Hystrix specific configuration to the archive and makes sure that beans.xml is present.
  *
@@ -34,12 +36,17 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
  */
 public class FaultToleranceArchiveProcessor implements ApplicationArchiveProcessor {
 
+    Logger log = Logger.getLogger(FaultToleranceArchiveProcessor.class.getName());
+
     @Override
     public void process(Archive<?> archive, TestClass testClass) {
 
         archive.as(WebArchive.class)
-                .addAsResource("config-hystrix.properties")
-                .addAsResource("config.yaml")
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+
+        if (testClass.getName().equals("org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadAsynchRetryTest")){
+            archive.as(WebArchive.class).addAsResource("config.properties");
+        }
+
     }
 }
