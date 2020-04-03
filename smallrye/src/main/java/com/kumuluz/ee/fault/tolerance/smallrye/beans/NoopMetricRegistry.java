@@ -150,6 +150,26 @@ public class NoopMetricRegistry extends MetricRegistry {
     }
 
     @Override
+    public SimpleTimer simpleTimer(String s) {
+        return null;
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(String s, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(Metadata metadata) {
+        return null;
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(Metadata metadata, Tag... tags) {
+        return null;
+    }
+
+    @Override
     public boolean remove(String name) {
         return false;
     }
@@ -231,6 +251,16 @@ public class NoopMetricRegistry extends MetricRegistry {
 
     @Override
     public SortedMap<MetricID, Timer> getTimers(MetricFilter filter) {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, SimpleTimer> getSimpleTimers() {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, SimpleTimer> getSimpleTimers(MetricFilter metricFilter) {
         return null;
     }
 

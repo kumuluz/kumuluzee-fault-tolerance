@@ -4,12 +4,7 @@
             xsi:schemaLocation="http://jboss.org/schema/arquillian http://www.jboss.org/schema/arquillian/arquillian_1_0.xsd">
     <container qualifier="KumuluzEE" default="true">
         <configuration>
-            <!-- Change default configuration file name so that it doesn't interfere with MP Config file -->
-            <property name="javaArguments">-Darchaius.configurationSource.defaultFileName=config-hystrix.properties</property>
 
-
-<!--            <property name="javaArguments">-Xmx512m -XX:MaxPermSize=128m -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y -Darchaius.configurationSource.defaultFileName=config-hystrix.properties</property>-->
-<!--            <property name="packaging">uberJar</property>-->
         </configuration>
     </container>
 </arquillian>

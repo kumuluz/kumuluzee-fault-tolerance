@@ -37,8 +37,11 @@ public class FaultToleranceArchiveProcessor implements ApplicationArchiveProcess
     @Override
     public void process(Archive<?> archive, TestClass testClass) {
 
-        archive.as(WebArchive.class)
-                .addAsResource("config-hystrix.properties")
-                .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+        archive.as(WebArchive.class).addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+
+        if ("org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadAsynchRetryTest".equals(testClass.getName())) {
+            archive.as(WebArchive.class).addAsResource("config.properties");
+        }
+
     }
 }
