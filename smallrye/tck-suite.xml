@@ -4,7 +4,7 @@
 
     <test name="microprofile-fault-tolerance TCK">
         <packages>
-            <package name="org.eclipse.microprofile.fault.tolerance.tck.*"></package>
+            <package name="org.eclipse.microprofile.fault.tolerance.tck.*"/>
         </packages>
     </test>
 
