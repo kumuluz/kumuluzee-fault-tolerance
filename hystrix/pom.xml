@@ -39,7 +39,7 @@
         <dependency>
             <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
             <artifactId>microprofile-fault-tolerance-tck</artifactId>
-            <version>${microprofile-faulttolerance.version}</version>
+            <version>${microprofile-fault-tolerance-hystrix.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

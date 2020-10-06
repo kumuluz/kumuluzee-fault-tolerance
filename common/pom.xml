@@ -18,6 +18,7 @@
         <dependency>
             <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
             <artifactId>microprofile-fault-tolerance-api</artifactId>
+            <version>${microprofile-fault-tolerance-hystrix.version}</version>
         </dependency>
 
         <dependency>
@@ -28,7 +29,7 @@
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
-            <version>${microprofile-metrics.version}</version>
+            <version>${microprofile-metrics-hystrix.version}</version>
         </dependency>
         <dependency>
             <groupId>com.kumuluz.ee.config</groupId>
