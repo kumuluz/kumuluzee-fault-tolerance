@@ -31,7 +31,7 @@ jobs:
         run: mvn --show-version --update-snapshots --batch-mode clean install -DskipTests=true
 
       - name: Test
-        run: mvn --batch-mode test
+        run: MAVEN_OPTS=-Xmx2048m mvn --batch-mode test
 
   publish:
     name: Publish to OSSRH
