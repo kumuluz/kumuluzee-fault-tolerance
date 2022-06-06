@@ -48,7 +48,7 @@ public class FaultToleranceConfigMapper implements ConfigurationSource {
     static final String MP_METRICS_ENABLED_KEY = "MP_Fault_Tolerance_Metrics_Enabled";
     private static final String KUMULUZ_METRICS_ENABLED_KEY = "kumuluzee.fault-tolerance.metrics-enabled";
 
-    private static final Class[] FAULT_TOLERANCE_ANNOTATIONS = {
+    private static final Class<?>[] FAULT_TOLERANCE_ANNOTATIONS = {
             Asynchronous.class,
             Timeout.class,
             Retry.class,

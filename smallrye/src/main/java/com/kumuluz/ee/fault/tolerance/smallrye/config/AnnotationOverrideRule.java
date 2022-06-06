@@ -34,10 +34,10 @@ public class AnnotationOverrideRule {
 
     private static final Set<String> VALID_ANNOTATIONS = new HashSet<>(FaultToleranceConfigMapper.FT_ANNOTATION_NAME_TO_HYPHEN_CASE.values());
 
-    private String klass;
-    private String method;
-    private String annotation;
-    private Map<String, String> parameters;
+    private final String klass;
+    private final String method;
+    private final String annotation;
+    private final Map<String, String> parameters;
 
     public AnnotationOverrideRule(String klass, String method, String annotation) {
         this.klass = klass;

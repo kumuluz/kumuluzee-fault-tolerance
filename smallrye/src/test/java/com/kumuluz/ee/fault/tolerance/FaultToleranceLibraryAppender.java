@@ -21,15 +21,12 @@
 package com.kumuluz.ee.fault.tolerance;
 
 import com.kumuluz.ee.common.ConfigExtension;
-import com.kumuluz.ee.fault.tolerance.smallrye.SmallRyeCdiExtension;
 import com.kumuluz.ee.fault.tolerance.smallrye.SmallRyeFtExtension;
 import com.kumuluz.ee.fault.tolerance.smallrye.config.FaultToleranceConfigExtension;
 import org.jboss.arquillian.container.test.spi.client.deployment.CachedAuxilliaryArchiveAppender;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-
-import javax.enterprise.inject.spi.Extension;
 
 /**
  * Adds SmallRye Fault Tolerance extension to archives.
@@ -43,7 +40,6 @@ public class FaultToleranceLibraryAppender extends CachedAuxilliaryArchiveAppend
     protected Archive<?> buildArchive() {
         return ShrinkWrap.create(JavaArchive.class)
                 .addPackages(true, SmallRyeFtExtension.class.getPackage())
-                .addAsServiceProvider(Extension.class, SmallRyeCdiExtension.class)
                 .addAsServiceProvider(com.kumuluz.ee.common.Extension.class, SmallRyeFtExtension.class)
                 .addAsServiceProvider(ConfigExtension.class, FaultToleranceConfigExtension.class);
     }

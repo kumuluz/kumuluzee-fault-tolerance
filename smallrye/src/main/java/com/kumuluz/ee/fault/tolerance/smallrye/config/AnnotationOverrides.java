@@ -36,7 +36,7 @@ public class AnnotationOverrides {
 
     private static final Logger LOG = Logger.getLogger(AnnotationOverrides.class.getName());
 
-    private ConfigurationUtil configUtil;
+    private final ConfigurationUtil configUtil;
 
     private Map<String, Map<String, String>> globalAnnotationOverrides;
     private Map<String, List<AnnotationOverrideRule>> annotationRules;
@@ -86,7 +86,7 @@ public class AnnotationOverrides {
 
             List<String> validationErrors = rule.validationErrors(); // validate and collect errors if present
             if (validationErrors.size() > 0) {
-                LOG.warning("Rule " + rule.toString() + " is invalid. Reason: " +
+                LOG.warning("Rule " + rule + " is invalid. Reason: " +
                         String.join("; ", validationErrors));
                 continue;
             }

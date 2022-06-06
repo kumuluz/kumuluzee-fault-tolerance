@@ -73,7 +73,7 @@ public class SmallRyeFtExtension implements Extension {
         return true;
     }
 
-    static boolean isExtensionPresent(String group, String implementationName) {
+    private static boolean isExtensionPresent(String group, String implementationName) {
         return EeRuntime.getInstance().getEeExtensions().stream().anyMatch(ext ->
                 ext.getGroup().equals(group) && ext.getImplementationName().equals(implementationName));
     }
