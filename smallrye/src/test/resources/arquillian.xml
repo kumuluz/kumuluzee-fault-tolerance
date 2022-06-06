@@ -4,7 +4,6 @@
             xsi:schemaLocation="http://jboss.org/schema/arquillian http://www.jboss.org/schema/arquillian/arquillian_1_0.xsd">
     <container qualifier="KumuluzEE" default="true">
         <configuration>
-            <property name="javaArguments">-Xmx512m</property>
         </configuration>
     </container>
 </arquillian>
