@@ -65,6 +65,7 @@
                     <environmentVariables>
                         <KUMULUZEE_METRICS_ADDDEFAULTTAGS>false</KUMULUZEE_METRICS_ADDDEFAULTTAGS>
                     </environmentVariables>
+                    <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>
         </plugins>
