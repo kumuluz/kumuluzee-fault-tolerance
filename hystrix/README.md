@@ -1,5 +1,5 @@
 # KumuluzEE Fault Tolerance
-[![Build Status](https://img.shields.io/travis/kumuluz/kumuluzee-fault-tolerance/master.svg?style=flat)](https://travis-ci.org/kumuluz/kumuluzee-fault-tolerance)
+[![KumuluzEE CI](https://github.com/kumuluz/kumuluzee-fault-tolerance/actions/workflows/kumuluzee-ci.yml/badge.svg)](https://github.com/kumuluz/kumuluzee-fault-tolerance/actions/workflows/kumuluzee-ci.yml)
 
 > KumuluzEE Fault Tolerance project for the KumuluzEE microservice framework. 
 
