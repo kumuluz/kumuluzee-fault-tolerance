@@ -66,6 +66,7 @@
                         <KUMULUZEE_METRICS_ADDDEFAULTTAGS>false</KUMULUZEE_METRICS_ADDDEFAULTTAGS>
                     </environmentVariables>
                     <reuseForks>false</reuseForks>
+                    <forkCount>0</forkCount>
                 </configuration>
             </plugin>
         </plugins>
