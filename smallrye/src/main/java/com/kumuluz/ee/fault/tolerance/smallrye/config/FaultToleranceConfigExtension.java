@@ -50,11 +50,6 @@ public class FaultToleranceConfigExtension implements ConfigExtension {
     }
 
     @Override
-    public ConfigurationSource getConfigurationSource() {
-        return null;
-    }
-
-    @Override
     public List<ConfigurationSource> getConfigurationSources() {
 
         List<ConfigurationSource> configSources = new LinkedList<>();
